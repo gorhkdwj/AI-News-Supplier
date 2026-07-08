@@ -2,13 +2,14 @@ import type { ResolvedConfig } from './config.js';
 import type { DB } from './db/connection.js';
 import { createHttpClient, type HttpClient } from './http.js';
 import { logger } from './logger.js';
-import { upsertItems } from './store/itemStore.js';
+import { upsertItems, purgeOld } from './store/itemStore.js';
 import {
   getSourceState,
   insertFetchLog,
   markAttempt,
   markFailure,
   markSuccess,
+  purgeOldFetchLogs,
   type FetchStatus,
 } from './store/fetchLog.js';
 import { enabledCollectors } from '../collectors/registry.js';
@@ -187,6 +188,13 @@ export async function refreshStale(
   const http = opts.http ?? createHttpClient();
   const timeoutMs = opts.perSourceTimeoutMs ?? 30_000;
   const concurrency = opts.concurrency ?? 4;
+
+  // 수집 시작 시 보존 정책을 적용한다(오래된 항목/로그 정리).
+  if (config.retentionDays != null) {
+    const purged = purgeOld(db, config.retentionDays);
+    if (purged > 0) logger.info(`보존 정책: 오래된 항목 ${purged}건 정리`);
+  }
+  purgeOldFetchLogs(db, new Date(now.getTime() - 30 * 86_400_000).toISOString());
 
   let collectors = enabledCollectors(config);
   if (opts.sources && opts.sources.length > 0) {

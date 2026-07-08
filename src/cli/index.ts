@@ -7,6 +7,8 @@ import { registerDoctor } from './commands/doctor.js';
 import { registerMcp } from './commands/mcp.js';
 import { registerLearn } from './commands/learn.js';
 import { registerHistory } from './commands/history.js';
+import { registerSchedule } from './commands/schedule.js';
+import { registerConfig } from './commands/config.js';
 
 const program = new Command();
 
@@ -23,6 +25,8 @@ registerDoctor(program);
 registerMcp(program);
 registerLearn(program);
 registerHistory(program);
+registerSchedule(program);
+registerConfig(program);
 
 program.parseAsync().catch((err: unknown) => {
   process.stderr.write(`오류: ${err instanceof Error ? err.message : String(err)}\n`);

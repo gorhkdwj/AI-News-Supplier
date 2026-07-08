@@ -6,6 +6,7 @@ import { countItems, countItemsBySource } from '../../core/store/itemStore.js';
 import { getSourceState } from '../../core/store/fetchLog.js';
 import { allCollectors } from '../../collectors/registry.js';
 import { SCHEMA_VERSION } from '../../core/db/migrations.js';
+import { scheduleStatus } from '../../scheduler/index.js';
 import { printText } from '../format.js';
 
 export function registerDoctor(program: Command): void {
@@ -20,6 +21,8 @@ export function registerDoctor(program: Command): void {
       lines.push(`DB 파일     : ${getDbPath()}`);
 
       const config = loadConfig();
+      lines.push(`보존 정책   : ${config.retentionDays == null ? '영구 보존' : `${config.retentionDays}일`}`);
+      lines.push(`스케줄      : ${scheduleStatus() ? '등록됨' : '미등록'}`);
       const db = openDb();
       try {
         const integrity = db.pragma('integrity_check', { simple: true });

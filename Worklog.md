@@ -10,6 +10,35 @@
 
 ---
 
+### W-010 · S5 스케줄러·보존·배포 준비 (구현 목표 완주)
+**요청**
+- S5 단계(스케줄러 + retention + doctor 완성 + README + 배포 준비) 구현 및 검증
+
+**수행 작업**
+- scheduler/index.ts: Windows(schtasks)·unix(crontab) 주기 수집 등록/해제/상태. 셸 없는 execFileSync 사용(보안)
+- CLI `schedule install/uninstall/status`, `config path/show/init/edit`
+- retention을 refreshStale 시작에 연결(retentionDays 초과 항목 + 30일 초과 fetch_log 정리)
+- doctor에 보존 정책·스케줄 상태 표시
+- README 전면 작성(실사용 기능만: 설치/CLI/MCP 등록/자동수집/설정/프라이버시), .gitattributes(LF 정규화)
+
+**변경 파일**
+- src/scheduler/index.ts, src/cli/commands/{schedule,config}.ts, src/cli/{index,commands/doctor}.ts, src/core/refresh.ts
+- README.md, .gitattributes
+
+**검증**
+- typecheck 통과, 테스트 43개 통과, lint 0
+- 라이브(Windows): schedule install → schtasks 등록 확인 → status "등록됨" → uninstall → "미등록" 라이프사이클
+- config init/path/show, doctor(보존·스케줄·전 소스) 정상
+- 배포물: npm pack이 dist+README+package.json만 포함(6파일, 131.7kB)
+- **클린 설치 검증**: tarball을 빈 폴더에 설치 → better-sqlite3 프리빌드 정상 로드(DB 무결성 ok) → ains doctor 전 항목 정상 → .cmd 래퍼 --version=0.0.1
+
+**판단 근거**
+- 계획서 S5 완료 조건(schedule 라이프사이클, 클린 설치 후 doctor green) 충족. 목표(S0~S5 단계별 검증 완주) 달성.
+
+**결과**
+- 완료: S5 및 전체 MVP(수집 7종 + MCP 9도구/3프롬프트 + CLI + 학습 + 스케줄러)
+- 미검증 범위: macOS/Linux cron 실기(Windows schtasks만 실기 검증, unix는 로직만). github/devto/huggingface/rss 수집기 단위 테스트(라이브+통합으로 커버). npm 레지스트리 실제 배포는 미수행(pack 검증까지)
+
 ### W-009 · S4 학습 기능
 **요청**
 - S4 단계(학습 후보 발굴/세션 설계/이력 + MCP 도구 4종 + learn 프롬프트 + CLI) 구현 및 검증
