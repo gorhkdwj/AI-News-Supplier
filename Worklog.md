@@ -10,6 +10,37 @@
 
 ---
 
+### W-005 · S0 스캐폴드 구현
+**요청**
+- 구현 목표(S0~S5) 설정 후 단계별 검증하며 진행 (goal)
+
+**수행 작업**
+- package.json(ESM, bin: ains/ains-mcp, engines node≥20, scripts) 작성
+- 런타임 의존성 설치: @modelcontextprotocol/sdk 1.29, better-sqlite3 12.11(프리빌드로 Windows 네이티브 빌드 문제 없음 확인), commander 15, rss-parser, fast-xml-parser, zod 4
+- 개발 의존성 설치: typescript, tsup, vitest, eslint, prettier, typescript-eslint 등
+- 설정 파일: tsconfig(strict/NodeNext), tsup(객체 entry로 dist/cli/index.js 고정, better-sqlite3 external, shebang banner, package.json 버전 define 주입), vitest(live 테스트 제외), eslint flat config(core/collectors→cli/mcp import 금지 규칙), .prettierrc
+- 빈 CLI(src/cli/index.ts, commander 기반 --version), src/global.d.ts, tests/smoke.test.ts
+- src/.gitkeep, tests/.gitkeep 제거(실제 파일 생성됨)
+
+**변경 파일**
+- package.json, package-lock.json, tsconfig.json, tsup.config.ts, vitest.config.ts, eslint.config.js, .prettierrc.json
+- src/cli/index.ts, src/global.d.ts, tests/smoke.test.ts
+- src/.gitkeep, tests/.gitkeep (삭제)
+
+**검증**
+- `npm run build`: dist/cli/index.js 생성 성공(bin 경로 일치 확인)
+- `node dist/cli/index.js --version`: 0.0.1 출력
+- `npm run typecheck`(tsc --noEmit): 통과
+- `npm test`(vitest run): 1 passed
+- `npm run lint`(eslint): 오류 0
+
+**판단 근거**
+- 계획서 S0 완료 조건(빌드 산출물 실행 + 테스트 통과) 충족. 버전은 package.json 단일 진실 원천에서 빌드 시 주입해 문서-코드 정합성 유지.
+
+**결과**
+- 완료: S0 스캐폴드, 빌드·타입·테스트·린트 파이프라인 동작
+- 남은 작업: S1 워킹 스켈레톤(DB+HN 수집기+CLI)
+
 ### W-004 · 초기 커밋 및 원격 푸시
 **요청**
 - 현재 상태를 git 커밋·푸시

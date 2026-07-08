@@ -1,0 +1,61 @@
+{
+  "name": "ai-news-supplier",
+  "version": "0.0.1",
+  "description": "AI 소식(커뮤니티·공식 업데이트·핫레포·핫모델·논문)을 수집해 로컬에 축적하고 MCP/CLI로 LLM 에이전트에 공급하는 로컬 우선 도구",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "ains": "dist/cli/index.js",
+    "ains-mcp": "dist/mcp/server.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "ai",
+    "news",
+    "mcp",
+    "cli",
+    "llm",
+    "agent",
+    "trends"
+  ],
+  "author": "gorhkdwj",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gorhkdwj/AI-News-Supplier.git"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.11.1",
+    "commander": "^15.0.0",
+    "fast-xml-parser": "^5.9.3",
+    "rss-parser": "^3.13.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.4",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
+  }
+}
