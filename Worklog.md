@@ -10,6 +10,49 @@
 
 ---
 
+### W-004 · 초기 커밋 및 원격 푸시
+**요청**
+- 현재 상태를 git 커밋·푸시
+
+**수행 작업**
+- 전체 파일 스테이징(out/은 .gitignore로 제외 확인) 후 root-commit 생성, origin/main 푸시 및 추적 설정
+
+**변경 파일**
+- 커밋 c3217e7: 15개 파일(운영 파일 6, docs 6, .gitkeep 3), 653줄
+
+**검증**
+- git push 성공 및 `main -> main` 추적 설정 출력 확인. 코드가 없어 테스트 실행은 해당 없음.
+
+**판단 근거**
+- CLAUDE.md 10절 Git 원칙(주요 단계 종료 시 commit→push)
+
+**결과**
+- 완료: 원격 저장소에 초기 상태 반영
+- 남은 작업: S0 스캐폴드 시작(사용자 승인 대기)
+
+### W-003 · plan 문서를 docs/plans로 통합
+**요청**
+- docs/ 하위의 plan 파일들을 docs/plans/ 하위로 이동
+
+**수행 작업**
+- project-plan.md, implementation-plan.md, validation-plan.md를 docs/plans/로 이동
+- requirements-contract.md는 계획이 아닌 기준 계약 문서이므로 docs/ 유지(사용자에게 보고)
+- 깨진 참조 경로 갱신: CLAUDE.md, requirements-contract.md, project-plan.md, Worklog.md
+
+**변경 파일**
+- docs/plans/{project-plan, implementation-plan, validation-plan}.md (이동)
+- CLAUDE.md, docs/requirements-contract.md, docs/plans/project-plan.md, Worklog.md (경로 수정)
+
+**검증**
+- grep으로 `docs/(implementation|project|validation)-plan` 잔여 참조 전수 확인 후 수정 완료
+
+**판단 근거**
+- 계획 문서를 한 폴더에 모아 탐색성 개선(사용자 지시)
+
+**결과**
+- 완료: docs/plans에 계획 문서 4개 통합
+- 남은 작업: 없음
+
 ### W-002 · 프로젝트 운영 체계 셋업
 **요청**
 - 확정 계획(docs/plans/2026-07-09-ai-news-supplier-plan.md)을 반영한 프로젝트 운영 구조 셋업
