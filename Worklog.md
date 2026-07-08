@@ -10,6 +10,34 @@
 
 ---
 
+### W-008 · S3 MCP 서버
+**요청**
+- S3 단계(MCP stdio 서버 + 데이터 도구 + ains mcp) 구현 및 검증
+
+**수행 작업**
+- MCP 데이터 도구 5종(get_trends, search_news, get_item, refresh_sources, get_source_status)을 zod 입력 스키마로 등록. structuredContent+text 반환
+- 프롬프트 trend-briefing 등록(learn 계열은 S4)
+- mcp/run.ts(startMcpServer), mcp/server.ts(bin 진입), cli `ains mcp` 명령
+- tsup entry에 mcp/server 추가(dist/mcp/server.js 생성). 버전 상수에 define 미적용 환경(tsx) fallback 추가
+- stdout 위생: 서버 경로는 logger(stderr)만 사용
+
+**변경 파일**
+- src/mcp/{tools,prompts,run,server}.ts, src/cli/commands/mcp.ts, src/cli/index.ts, tsup.config.ts
+- tests/mcp/smoke.test.ts (tsx로 소스 stdio 실행)
+
+**검증**
+- typecheck 통과(zod 4가 MCP SDK 1.29 ZodRawShapeCompat와 호환 확인), 테스트 36개 통과, lint 0
+- MCP stdio 스모크: Client 연결 → listTools 5종 → callTool get_trends가 시드 항목을 structuredContent로 반환 → listPrompts에 trend-briefing
+- 빌드: dist/mcp/server.js 생성 확인
+
+**판단 근거**
+- 계획서 S3 완료 조건(MCP 클라이언트에서 도구 호출) 충족. 소스 disabled 시드로 네트워크 없이 통합 검증.
+
+**결과**
+- 완료: MCP 서버 + 데이터 도구 5종
+- 남은 작업: S4 학습 기능(도구 4종 + learn 프롬프트)
+- 미검증 범위: 빌드된 dist 서버를 실제 Claude Code에 등록한 end-to-end는 수동 확인 필요(스모크로 프로토콜/도구는 검증됨)
+
 ### W-007 · S2 수집기 완성
 **요청**
 - S2 단계(나머지 수집기 6종 + registry + rank 검증) 구현 및 단계별 검증

@@ -4,6 +4,7 @@ import { registerFetch } from './commands/fetch.js';
 import { registerSearch } from './commands/search.js';
 import { registerShow } from './commands/show.js';
 import { registerDoctor } from './commands/doctor.js';
+import { registerMcp } from './commands/mcp.js';
 
 const program = new Command();
 
@@ -17,6 +18,7 @@ registerFetch(program);
 registerSearch(program);
 registerShow(program);
 registerDoctor(program);
+registerMcp(program);
 
 program.parseAsync().catch((err: unknown) => {
   process.stderr.write(`오류: ${err instanceof Error ? err.message : String(err)}\n`);

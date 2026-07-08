@@ -6,10 +6,10 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 };
 
 export default defineConfig({
-  // 객체 entry로 출력 경로를 고정한다(dist/cli/index.js 등 bin 경로와 일치).
-  // MCP 서버(mcp/server)는 S3에서 추가한다.
+  // 객체 entry로 출력 경로를 고정한다(dist/cli/index.js, dist/mcp/server.js 등 bin 경로와 일치).
   entry: {
     'cli/index': 'src/cli/index.ts',
+    'mcp/server': 'src/mcp/server.ts',
   },
   format: ['esm'],
   target: 'node20',
