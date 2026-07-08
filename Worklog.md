@@ -10,6 +10,37 @@
 
 ---
 
+### W-009 · S4 학습 기능
+**요청**
+- S4 단계(학습 후보 발굴/세션 설계/이력 + MCP 도구 4종 + learn 프롬프트 + CLI) 구현 및 검증
+
+**수행 작업**
+- core/learning/topics.ts: 룰 기반 용어 추출(엔티티 사전~80개, 별칭, 블록리스트, 버전형 토큰, arXiv 카테고리 태그 제외)
+- core/learning/candidates.ts: 용어 클러스터링(60% 겹침 병합) + learnScore(novelty×(2×sourceSpread+hotSum+velocity+ln(1+n))) + 증거 버킷 + 채택 필터
+- core/learning/session.ts: FTS 증거 수집 + 레벨/시간 파라미터 지시문 템플릿(브리핑→개념→실습→점검→추가자료→record 안내)
+- core/store/learningStore.ts: 학습 이력 CRUD + 정규화 토픽 기반 novelty 조회
+- MCP 도구 4종(get_learning_candidates, design_learning_session, record_learning, get_learning_history) + 프롬프트 learn-today/deep-dive
+- CLI: learn(candidates 기본/session/record), history
+
+**변경 파일**
+- src/core/learning/{topics,candidates,session}.ts, src/core/store/learningStore.ts
+- src/mcp/{tools,prompts}.ts, src/cli/commands/{learn,history}.ts, src/cli/{format,index}.ts
+- tests/core/learning.test.ts, tests/mcp/smoke.test.ts(9종+프롬프트3+record→history)
+
+**검증**
+- typecheck 통과, 테스트 43개 통과, lint 0
+- 학습 코어 단위: 3소스 등장 토픽(moe) 최상위 후보, 기록 후 includeLearned=false 제외, 세션 지시문 생성
+- 라이브: learn candidates가 agentic/transformers/openai/gpt/reasoning 발굴, record 후 해당 토픽 제외, history 표시
+- MCP 스모크: 학습 도구 4종 노출, record_learning→get_learning_history 반영
+
+**판단 근거**
+- 계획서 S4 완료 조건(후보→세션→기록→제외 순환) 충족. 도구 자체 LLM 미호출(지능은 에이전트).
+- 후보 품질 개선: arXiv 카테고리 태그(cs.AI 등) 토픽 제외
+
+**결과**
+- 완료: 학습 기능 전체(코어+MCP+CLI)
+- 남은 작업: S5 스케줄러/retention/doctor완성/README/배포
+
 ### W-008 · S3 MCP 서버
 **요청**
 - S3 단계(MCP stdio 서버 + 데이터 도구 + ains mcp) 구현 및 검증

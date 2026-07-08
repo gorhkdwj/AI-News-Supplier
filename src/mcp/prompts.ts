@@ -32,4 +32,41 @@ export function registerPrompts(server: McpServer): void {
       );
     },
   );
+
+  server.registerPrompt(
+    'learn-today',
+    {
+      description: '오늘 학습할 만한 AI 토픽을 추천받아 학습 세션을 진행하도록 안내합니다.',
+      argsSchema: { level: z.string().optional(), time_budget_minutes: z.string().optional() },
+    },
+    ({ level, time_budget_minutes }) => {
+      const lv = level ?? 'intermediate';
+      const budget = time_budget_minutes ?? '45';
+      return userMessage(
+        [
+          'get_learning_candidates 도구를 호출해 학습 후보를 가져오십시오.',
+          '상위 3개를 각각의 why(추천 이유)와 함께 사용자에게 제시하고 하나를 고르게 하십시오.',
+          `사용자가 고르면 design_learning_session(topic, level="${lv}", time_budget_minutes=${budget})을 호출하십시오.`,
+          '반환된 instructions와 context에 따라 학습 세션을 진행하십시오.',
+          '학습이 끝나면 record_learning으로 해당 토픽을 기록하십시오.',
+        ].join('\n'),
+      );
+    },
+  );
+
+  server.registerPrompt(
+    'deep-dive',
+    {
+      description: '이미 아는 특정 토픽으로 바로 학습 세션을 시작합니다.',
+      argsSchema: { topic: z.string() },
+    },
+    ({ topic }) =>
+      userMessage(
+        [
+          `design_learning_session(topic="${topic}") 도구를 호출하십시오.`,
+          '반환된 instructions와 context에 따라 학습 세션을 진행하십시오.',
+          '학습이 끝나면 record_learning으로 기록하십시오.',
+        ].join('\n'),
+      ),
+  );
 }

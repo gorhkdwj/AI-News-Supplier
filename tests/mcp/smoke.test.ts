@@ -67,12 +67,29 @@ afterAll(async () => {
 });
 
 describe('MCP stdio 스모크', () => {
-  it('데이터 도구 5종을 노출한다', async () => {
+  it('데이터 5종 + 학습 4종 도구를 노출한다', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
-      ['get_item', 'get_source_status', 'get_trends', 'refresh_sources', 'search_news'].sort(),
+      [
+        'get_item',
+        'get_source_status',
+        'get_trends',
+        'refresh_sources',
+        'search_news',
+        'get_learning_candidates',
+        'design_learning_session',
+        'record_learning',
+        'get_learning_history',
+      ].sort(),
     );
+  });
+
+  it('record_learning 후 get_learning_history에 반영된다', async () => {
+    await client.callTool({ name: 'record_learning', arguments: { topic: 'mcp', level: 'beginner' } });
+    const res = await client.callTool({ name: 'get_learning_history', arguments: {} });
+    const structured = res.structuredContent as { entries: { topic: string }[] };
+    expect(structured.entries.some((e) => e.topic === 'mcp')).toBe(true);
   });
 
   it('get_trends가 시드 항목을 structuredContent로 반환한다', async () => {
@@ -82,8 +99,11 @@ describe('MCP stdio 스모크', () => {
     expect(structured.items.some((i) => i.title.includes('Seeded AI trend'))).toBe(true);
   });
 
-  it('trend-briefing 프롬프트를 노출한다', async () => {
+  it('프롬프트 3종(trend-briefing, learn-today, deep-dive)을 노출한다', async () => {
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toContain('trend-briefing');
+    const names = prompts.map((p) => p.name);
+    expect(names).toContain('trend-briefing');
+    expect(names).toContain('learn-today');
+    expect(names).toContain('deep-dive');
   });
 });

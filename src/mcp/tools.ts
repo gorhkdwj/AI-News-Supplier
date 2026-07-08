@@ -14,6 +14,9 @@ import { getSourceState } from '../core/store/fetchLog.js';
 import { computeHotness, interleaveBySource } from '../core/rank.js';
 import { allCollectors } from '../collectors/registry.js';
 import { ITEM_TYPES, type ItemType, type NewsItem, type RankedItem } from '../core/types.js';
+import { mineLearningCandidates, type EvidenceBuckets } from '../core/learning/candidates.js';
+import { designLearningSession } from '../core/learning/session.js';
+import { recordLearning, getLearningHistory } from '../core/store/learningStore.js';
 
 export interface McpDeps {
   db: DB;
@@ -57,6 +60,17 @@ function toItemBrief(it: NewsItem) {
     tags: it.tags,
   };
 }
+
+function bucketsToBrief(b: EvidenceBuckets) {
+  return {
+    official: b.official.map(toItemBrief),
+    papers: b.papers.map(toItemBrief),
+    repos: b.repos.map(toItemBrief),
+    discussion: b.discussion.map(toItemBrief),
+  };
+}
+
+const levelEnum = z.enum(['beginner', 'intermediate', 'advanced']);
 
 /** 데이터 조회/수집 MCP 도구 5종을 등록한다. */
 export function registerTools(server: McpServer, deps: McpDeps): void {
@@ -161,6 +175,99 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
         };
       });
       return jsonResult({ sources });
+    },
+  );
+
+  server.registerTool(
+    'get_learning_candidates',
+    {
+      description:
+        '최근 데이터에서 학습 가치가 높은 토픽(여러 소스 등장·급상승·신규성)을 근거 자료와 함께 반환합니다.',
+      inputSchema: {
+        limit: z.number().int().positive().max(20).optional(),
+        since_days: z.number().int().positive().optional(),
+        include_learned: z.boolean().optional(),
+      },
+    },
+    async (args) => {
+      await refreshStale(db, config);
+      const candidates = mineLearningCandidates(db, {
+        limit: args.limit ?? 5,
+        sinceDays: args.since_days ?? 7,
+        includeLearned: args.include_learned ?? false,
+        relearnAfterDays: config.learning.relearnAfterDays,
+        now: new Date(),
+      });
+      return jsonResult({
+        candidates: candidates.map((c) => ({
+          topic: c.topic,
+          normalized_topic: c.normalizedTopic,
+          learn_score: c.learnScore,
+          signals: c.signals,
+          why: c.why,
+          evidence: bucketsToBrief(c.evidence),
+        })),
+      });
+    },
+  );
+
+  server.registerTool(
+    'design_learning_session',
+    {
+      description:
+        '특정 토픽의 맥락 자료를 모으고, 에이전트가 학습 세션을 설계·진행하도록 지시문을 반환합니다.',
+      inputSchema: {
+        topic: z.string().min(1),
+        level: levelEnum.optional(),
+        time_budget_minutes: z.number().int().positive().optional(),
+      },
+    },
+    (args) => {
+      const session = designLearningSession(db, {
+        topic: args.topic,
+        level: args.level ?? config.learning.defaultLevel,
+        timeBudgetMinutes: args.time_budget_minutes ?? 45,
+      });
+      return jsonResult({
+        topic: session.topic,
+        context: bucketsToBrief(session.context),
+        instructions: session.instructions,
+      });
+    },
+  );
+
+  server.registerTool(
+    'record_learning',
+    {
+      description: '학습한 토픽을 이력에 기록합니다(이후 후보 추천에서 중복 제외).',
+      inputSchema: {
+        topic: z.string().min(1),
+        level: levelEnum.optional(),
+        time_spent_min: z.number().int().positive().optional(),
+        notes: z.string().optional(),
+        item_ids: z.array(z.string()).optional(),
+      },
+    },
+    (args) => {
+      const id = recordLearning(db, {
+        topic: args.topic,
+        level: args.level,
+        timeSpentMin: args.time_spent_min,
+        notes: args.notes,
+        itemIds: args.item_ids,
+      });
+      return jsonResult({ recorded: true, id });
+    },
+  );
+
+  server.registerTool(
+    'get_learning_history',
+    {
+      description: '학습 이력을 최신순으로 반환합니다.',
+      inputSchema: { limit: z.number().int().positive().max(100).optional() },
+    },
+    (args) => {
+      return jsonResult({ entries: getLearningHistory(db, args.limit ?? 20) });
     },
   );
 }
