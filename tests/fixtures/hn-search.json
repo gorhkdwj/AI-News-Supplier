@@ -1,0 +1,37 @@
+{
+  "hits": [
+    {
+      "objectID": "100",
+      "title": "GPT-5 released with new agent features",
+      "url": "https://openai.com/index/gpt-5",
+      "author": "sama",
+      "points": 500,
+      "num_comments": 210,
+      "created_at": "2026-07-09T00:00:00.000Z",
+      "created_at_i": 1783555200,
+      "story_text": null
+    },
+    {
+      "objectID": "101",
+      "title": "My favorite pasta recipe for weeknights",
+      "url": "https://food.example.com/pasta",
+      "author": "chef",
+      "points": 120,
+      "num_comments": 15,
+      "created_at": "2026-07-09T01:00:00.000Z",
+      "created_at_i": 1783558800,
+      "story_text": null
+    },
+    {
+      "objectID": "102",
+      "title": "Ask HN: best local LLM inference setup?",
+      "url": null,
+      "author": "curious",
+      "points": 88,
+      "num_comments": 60,
+      "created_at": "2026-07-09T02:00:00.000Z",
+      "created_at_i": 1783562400,
+      "story_text": "Looking for advice on running llama models locally."
+    }
+  ]
+}

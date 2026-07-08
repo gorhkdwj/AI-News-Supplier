@@ -10,6 +10,38 @@
 
 ---
 
+### W-006 · S1 워킹 스켈레톤 구현
+**요청**
+- S1 단계(DB+HN 수집기+CLI) 구현 및 단계별 검증
+
+**수행 작업**
+- 코어: types(NewsItem/CollectedItem/ItemType), paths(AINS_HOME), logger(stderr 전용), config(zod 전체 스키마, prefault로 sparse override), normalize(canonical URL+sha256 id)
+- DB: connection(better-sqlite3 WAL), migrations(전체 스키마 DDL, user_version 관리, FTS5+트리거)
+- store: itemStore(upsert/dedup/FTS검색/score_history/purge), fetchLog(source_state, fetch_log)
+- http(fetch 래퍼: timeout, 지수백오프 재시도, 조건부 GET), rank(percentile×decay×typeBoost hotness, 소스 인터리브)
+- collectors: types(Collector 계약, CollectorError), keywords(AI 관련성), hackernews(Algolia), registry
+- refresh(TTL 오케스트레이터: 스킵/백오프/실패 격리, 동시성 4)
+- cli: shared, format, commands(trends/fetch/search/show/doctor), index
+
+**변경 파일**
+- src/core/{types,paths,logger,config,normalize,http,rank,refresh}.ts, src/core/db/{connection,migrations}.ts, src/core/store/{itemStore,fetchLog}.ts
+- src/collectors/{types,keywords,hackernews,registry}.ts
+- src/cli/{shared,format,index}.ts, src/cli/commands/{trends,fetch,search,show,doctor}.ts
+- tests/: normalize/itemStore/migrations/refresh, collectors/hackernews, helpers/stubHttp, fixtures/hn-search.json
+
+**검증**
+- typecheck 통과, 단위/통합 테스트 22개 통과, lint 0
+- 라이브 검증(격리 AINS_HOME): `fetch` 63건 수집 → 재실행 시 TTL skip → `trends` hotness 순 출력 → `search`/`show`/`doctor` 정상
+- 실패 격리 검증: 500 응답 시 예외 없이 status=error 보고, DB 무변경
+
+**판단 근거**
+- 계획서 S1 완료 조건(수집→축적→조회 파이프라인 관통, dedup+TTL skip) 충족. 계층별 typecheck로 충돌 조기 차단.
+- 스키마 버전은 user_version으로 관리(계획서 meta.schema_version 대비 부트스트랩 견고성 개선).
+
+**결과**
+- 완료: S1 워킹 스켈레톤. T-001(HN points 400) 해결.
+- 남은 작업: S2 나머지 수집기 6종 + keywords 광범위 적용 + rank 미세조정
+
 ### W-005 · S0 스캐폴드 구현
 **요청**
 - 구현 목표(S0~S5) 설정 후 단계별 검증하며 진행 (goal)

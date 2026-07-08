@@ -1,4 +1,9 @@
 import { Command } from 'commander';
+import { registerTrends } from './commands/trends.js';
+import { registerFetch } from './commands/fetch.js';
+import { registerSearch } from './commands/search.js';
+import { registerShow } from './commands/show.js';
+import { registerDoctor } from './commands/doctor.js';
 
 const program = new Command();
 
@@ -7,4 +12,13 @@ program
   .description('AI 소식을 수집해 로컬에 축적하고 MCP/CLI로 LLM 에이전트에 공급하는 도구')
   .version(__APP_VERSION__, '-v, --version', '버전을 출력합니다');
 
-program.parse();
+registerTrends(program);
+registerFetch(program);
+registerSearch(program);
+registerShow(program);
+registerDoctor(program);
+
+program.parseAsync().catch((err: unknown) => {
+  process.stderr.write(`오류: ${err instanceof Error ? err.message : String(err)}\n`);
+  process.exit(1);
+});
