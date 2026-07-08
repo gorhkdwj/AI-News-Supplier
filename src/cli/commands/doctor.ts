@@ -4,7 +4,7 @@ import { openDb } from '../../core/db/connection.js';
 import { getDataDir, getDbPath } from '../../core/paths.js';
 import { countItems, countItemsBySource } from '../../core/store/itemStore.js';
 import { getSourceState } from '../../core/store/fetchLog.js';
-import { ALL_COLLECTORS } from '../../collectors/registry.js';
+import { allCollectors } from '../../collectors/registry.js';
 import { SCHEMA_VERSION } from '../../core/db/migrations.js';
 import { printText } from '../format.js';
 
@@ -29,7 +29,7 @@ export function registerDoctor(program: Command): void {
 
         const bySource = countItemsBySource(db);
         lines.push('소스 상태:');
-        for (const c of ALL_COLLECTORS) {
+        for (const c of allCollectors(config)) {
           const enabled = c.isEnabled(config);
           const state = getSourceState(db, c.name);
           lines.push(

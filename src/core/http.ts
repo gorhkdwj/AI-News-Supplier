@@ -21,8 +21,26 @@ export interface HttpGetOptions {
   retries?: number;
 }
 
+export interface HttpPostOptions {
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+  retries?: number;
+}
+
 export interface HttpClient {
   get(url: string, opts?: HttpGetOptions): Promise<HttpResponse>;
+  /** application/x-www-form-urlencoded POST (OAuth 토큰 발급 등). */
+  postForm(url: string, body: Record<string, string>, opts?: HttpPostOptions): Promise<HttpResponse>;
+}
+
+interface RequestSpec {
+  method: 'GET' | 'POST';
+  headers?: Record<string, string>;
+  timeoutMs?: number;
+  etag?: string | null;
+  lastModified?: string | null;
+  body?: string;
+  contentType?: string;
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
@@ -31,19 +49,26 @@ function backoffMs(attempt: number): number {
   return Math.min(2000, 250 * 2 ** attempt);
 }
 
-async function doFetch(url: string, opts: HttpGetOptions): Promise<HttpResponse> {
+async function doRequest(url: string, spec: RequestSpec): Promise<HttpResponse> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15_000);
+  const timeout = setTimeout(() => controller.abort(), spec.timeoutMs ?? 15_000);
   try {
     const headers: Record<string, string> = {
       'user-agent': USER_AGENT,
       accept: 'application/json, text/xml, application/xml, */*',
-      ...opts.headers,
+      ...spec.headers,
     };
-    if (opts.etag) headers['if-none-match'] = opts.etag;
-    if (opts.lastModified) headers['if-modified-since'] = opts.lastModified;
+    if (spec.etag) headers['if-none-match'] = spec.etag;
+    if (spec.lastModified) headers['if-modified-since'] = spec.lastModified;
+    if (spec.contentType) headers['content-type'] = spec.contentType;
 
-    const res = await fetch(url, { headers, signal: controller.signal, redirect: 'follow' });
+    const res = await fetch(url, {
+      method: spec.method,
+      headers,
+      body: spec.body,
+      signal: controller.signal,
+      redirect: 'follow',
+    });
     const text = res.status === 304 ? '' : await res.text();
     return {
       status: res.status,
@@ -61,30 +86,55 @@ async function doFetch(url: string, opts: HttpGetOptions): Promise<HttpResponse>
   }
 }
 
+async function withRetry(
+  retries: number,
+  run: () => Promise<HttpResponse>,
+): Promise<HttpResponse> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await run();
+      if (res.status >= 500 && attempt < retries) {
+        await sleep(backoffMs(attempt));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await sleep(backoffMs(attempt));
+        continue;
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 /** 기본 HTTP 클라이언트. timeout + 지수 백오프 재시도 + 조건부 GET을 지원한다. */
 export function createHttpClient(): HttpClient {
   return {
-    async get(url: string, opts: HttpGetOptions = {}): Promise<HttpResponse> {
-      const retries = opts.retries ?? 2;
-      let lastErr: unknown;
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          const res = await doFetch(url, opts);
-          // 5xx는 재시도, 4xx/2xx/3xx는 그대로 반환한다.
-          if (res.status >= 500 && attempt < retries) {
-            await sleep(backoffMs(attempt));
-            continue;
-          }
-          return res;
-        } catch (err) {
-          lastErr = err;
-          if (attempt < retries) {
-            await sleep(backoffMs(attempt));
-            continue;
-          }
-        }
-      }
-      throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+    get(url: string, opts: HttpGetOptions = {}): Promise<HttpResponse> {
+      return withRetry(opts.retries ?? 2, () =>
+        doRequest(url, {
+          method: 'GET',
+          headers: opts.headers,
+          timeoutMs: opts.timeoutMs,
+          etag: opts.etag,
+          lastModified: opts.lastModified,
+        }),
+      );
+    },
+    postForm(url: string, body: Record<string, string>, opts: HttpPostOptions = {}): Promise<HttpResponse> {
+      const encoded = new URLSearchParams(body).toString();
+      return withRetry(opts.retries ?? 2, () =>
+        doRequest(url, {
+          method: 'POST',
+          headers: opts.headers,
+          timeoutMs: opts.timeoutMs,
+          body: encoded,
+          contentType: 'application/x-www-form-urlencoded',
+        }),
+      );
     },
   };
 }

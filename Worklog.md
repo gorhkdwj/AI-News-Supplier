@@ -10,6 +10,34 @@
 
 ---
 
+### W-007 · S2 수집기 완성
+**요청**
+- S2 단계(나머지 수집기 6종 + registry + rank 검증) 구현 및 단계별 검증
+
+**수행 작업**
+- 수집기 6종: github(search API, 토큰 선택), huggingface(models+daily_papers), arxiv(Atom XML, fast-xml-parser, 버전 접미사 제거 dedup), devto(태그+반응수+키워드 필터), reddit(OAuth client_credentials, 키 게이트, 토큰 메모리 캐시), rss(피드별 인스턴스+조건부 GET+필드 정규화)
+- http 클라이언트에 postForm 추가(reddit OAuth). registry를 STATIC_COLLECTORS + 동적 RSS(enabledCollectors/allCollectors)로 확장. doctor를 allCollectors 기반으로 갱신
+- 각 API 응답 형태를 라이브로 실물 확인 후 파서 작성(계획서 재확인 원칙)
+
+**변경 파일**
+- src/collectors/{github,huggingface,arxiv,devto,reddit,rss}.ts, registry.ts
+- src/core/http.ts(postForm), src/core/config.ts(metaai 제거), src/cli/commands/doctor.ts
+- tests: collectors/{arxiv,reddit}, core/rank, fixtures/{arxiv.atom.xml,reddit-hot.json}, refresh 격리 테스트, stubHttp postForm
+
+**검증**
+- typecheck 통과, 테스트 33개 통과, lint 0
+- 라이브 fetch --force: hackernews 63, github 60, huggingface 55, arxiv 75, devto 24, rss:openai/deepmind/googleai/hfblog 정상 수집. reddit은 키 없어 비활성(정상)
+- trends에 HN/RSS/devto/github 혼합 노출(인터리브 동작)
+- 격리 검증: 한 소스(github) 실패해도 hackernews 정상 저장
+
+**판단 근거**
+- 계획서 S2 완료 조건(전 소스 수집, 소스 1개 고장 시 나머지 성공) 충족. T-001/T-002/T-003 해결.
+
+**결과**
+- 완료: 수집기 7종(HN+6) 가동, 랭킹 인터리브
+- 남은 작업: S3 MCP 서버
+- 미검증 범위: github/devto/huggingface/rss 단위 테스트 미작성(라이브 통합+매핑 단순성으로 커버, 추후 fixture 보강 가능). reddit 라이브(자격증명 없음, fixture 테스트로 로직만 검증)
+
 ### W-006 · S1 워킹 스켈레톤 구현
 **요청**
 - S1 단계(DB+HN 수집기+CLI) 구현 및 단계별 검증

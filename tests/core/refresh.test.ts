@@ -18,9 +18,15 @@ describe('refreshStale', () => {
     db = openDb(':memory:');
   });
 
+  const ONLY_HN = { sources: ['hackernews'] };
+
   it('활성 수집기를 실행하고 DB에 항목을 축적한다', async () => {
     const http = stubHttp([{ match: 'hn.algolia.com', body: hnFixture }]);
-    const summary = await refreshStale(db, defaultConfig(), { http, now: new Date('2026-07-09T12:00:00Z') });
+    const summary = await refreshStale(db, defaultConfig(), {
+      http,
+      now: new Date('2026-07-09T12:00:00Z'),
+      ...ONLY_HN,
+    });
 
     const hn = summary.results.find((r) => r.source === 'hackernews');
     expect(hn?.status).toBe('ok');
@@ -32,25 +38,42 @@ describe('refreshStale', () => {
     const http = stubHttp([{ match: 'hn.algolia.com', body: hnFixture }]);
     const t1 = new Date('2026-07-09T12:00:00Z');
     const t2 = new Date('2026-07-09T12:05:00Z'); // 5분 후 (hackernews TTL 30분 이내)
-    await refreshStale(db, defaultConfig(), { http, now: t1 });
-    const second = await refreshStale(db, defaultConfig(), { http, now: t2 });
+    await refreshStale(db, defaultConfig(), { http, now: t1, ...ONLY_HN });
+    const second = await refreshStale(db, defaultConfig(), { http, now: t2, ...ONLY_HN });
     expect(second.results.find((r) => r.source === 'hackernews')?.status).toBe('skipped');
   });
 
   it('force면 TTL을 무시하고 다시 수집한다', async () => {
     const http = stubHttp([{ match: 'hn.algolia.com', body: hnFixture }]);
     const t1 = new Date('2026-07-09T12:00:00Z');
-    await refreshStale(db, defaultConfig(), { http, now: t1 });
-    const forced = await refreshStale(db, defaultConfig(), { http, now: t1, force: true });
+    await refreshStale(db, defaultConfig(), { http, now: t1, ...ONLY_HN });
+    const forced = await refreshStale(db, defaultConfig(), { http, now: t1, force: true, ...ONLY_HN });
     expect(forced.results.find((r) => r.source === 'hackernews')?.status).toBe('ok');
   });
 
   it('수집기 실패는 격리되어 예외를 던지지 않고 error 상태로 보고한다', async () => {
     const http = stubHttp([{ match: 'hn.algolia.com', status: 500 }]);
-    const summary = await refreshStale(db, defaultConfig(), { http, now: new Date('2026-07-09T12:00:00Z') });
+    const summary = await refreshStale(db, defaultConfig(), {
+      http,
+      now: new Date('2026-07-09T12:00:00Z'),
+      ...ONLY_HN,
+    });
     const hn = summary.results.find((r) => r.source === 'hackernews');
     expect(hn?.status).toBe('error');
     expect(hn?.error).toBeTruthy();
     expect(countItems(db)).toBe(0);
+  });
+
+  it('한 소스가 실패해도 다른 소스 수집은 성공한다(격리)', async () => {
+    // hackernews만 응답하고 github는 매칭 실패(404)로 둔다.
+    const http = stubHttp([{ match: 'hn.algolia.com', body: hnFixture }]);
+    const summary = await refreshStale(db, defaultConfig(), {
+      http,
+      now: new Date('2026-07-09T12:00:00Z'),
+      sources: ['hackernews', 'github'],
+    });
+    expect(summary.results.find((r) => r.source === 'hackernews')?.status).toBe('ok');
+    expect(summary.results.find((r) => r.source === 'github')?.status).toBe('error');
+    expect(countItems(db)).toBe(2); // hackernews 항목은 정상 저장
   });
 });

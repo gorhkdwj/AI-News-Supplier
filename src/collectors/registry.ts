@@ -1,16 +1,31 @@
 import type { ResolvedConfig } from '../core/config.js';
 import { hackernewsCollector } from './hackernews.js';
+import { githubCollector } from './github.js';
+import { huggingfaceCollector } from './huggingface.js';
+import { arxivCollector } from './arxiv.js';
+import { devtoCollector } from './devto.js';
+import { redditCollector } from './reddit.js';
+import { makeRssCollectors } from './rss.js';
 import type { Collector } from './types.js';
 
-/** 등록된 모든 수집기. S2에서 소스를 추가하며 늘어난다. */
-export const ALL_COLLECTORS: Collector[] = [hackernewsCollector];
+/** 정적으로 등록된 수집기(RSS는 설정에 따라 동적 생성). */
+export const STATIC_COLLECTORS: Collector[] = [
+  hackernewsCollector,
+  githubCollector,
+  huggingfaceCollector,
+  arxivCollector,
+  devtoCollector,
+  redditCollector,
+];
 
-/** 설정상 활성화된 수집기만 반환한다. */
+/** 설정 기준 활성 수집기 전체(정적 + 동적 RSS)를 반환한다. */
 export function enabledCollectors(config: ResolvedConfig): Collector[] {
-  return ALL_COLLECTORS.filter((c) => c.isEnabled(config));
+  const statics = STATIC_COLLECTORS.filter((c) => c.isEnabled(config));
+  const rss = makeRssCollectors(config).filter((c) => c.isEnabled(config));
+  return [...statics, ...rss];
 }
 
-/** 이름으로 수집기를 찾는다(활성 여부 무관). */
-export function findCollector(name: string): Collector | undefined {
-  return ALL_COLLECTORS.find((c) => c.name === name);
+/** 활성 여부와 무관하게 모든 수집기(정적 + 동적 RSS)를 반환한다(doctor/진단용). */
+export function allCollectors(config: ResolvedConfig): Collector[] {
+  return [...STATIC_COLLECTORS, ...makeRssCollectors(config)];
 }

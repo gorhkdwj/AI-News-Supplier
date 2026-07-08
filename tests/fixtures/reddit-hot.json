@@ -1,0 +1,33 @@
+{
+  "data": {
+    "children": [
+      {
+        "data": {
+          "title": "New open LLM beats GPT on benchmarks",
+          "url": "https://example.com/new-llm",
+          "permalink": "/r/LocalLLaMA/comments/abc/new_open_llm/",
+          "ups": 342,
+          "num_comments": 88,
+          "author": "researcher",
+          "created_utc": 1783555200,
+          "subreddit": "LocalLLaMA",
+          "stickied": false,
+          "selftext": "Details about the model."
+        }
+      },
+      {
+        "data": {
+          "title": "Weekly discussion thread (pinned)",
+          "url": "https://www.reddit.com/r/MachineLearning/pinned",
+          "permalink": "/r/MachineLearning/comments/xyz/weekly/",
+          "ups": 12,
+          "num_comments": 200,
+          "author": "AutoModerator",
+          "created_utc": 1783500000,
+          "subreddit": "MachineLearning",
+          "stickied": true
+        }
+      }
+    ]
+  }
+}

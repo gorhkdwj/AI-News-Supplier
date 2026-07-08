@@ -8,7 +8,6 @@ export const DEFAULT_FEEDS = [
   { id: 'openai', title: 'OpenAI News', url: 'https://openai.com/news/rss.xml' },
   { id: 'deepmind', title: 'Google DeepMind', url: 'https://deepmind.google/blog/rss.xml' },
   { id: 'googleai', title: 'Google AI Blog', url: 'https://blog.google/technology/ai/rss/' },
-  { id: 'metaai', title: 'Meta AI Blog', url: 'https://ai.meta.com/blog/rss/' },
   { id: 'hfblog', title: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml' },
 ];
 

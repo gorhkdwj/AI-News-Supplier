@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>http://arxiv.org/abs/2607.06565v2</id>
+    <title>Scaling Laws for
+      Mixture-of-Experts</title>
+    <summary>  We study scaling behavior of MoE models.  </summary>
+    <published>2026-07-07T17:59:50Z</published>
+    <author><name>Jane Doe</name></author>
+    <author><name>John Roe</name></author>
+    <category term="cs.LG"/>
+    <category term="cs.AI"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.06600v1</id>
+    <title>A Single Paper</title>
+    <summary>Abstract text.</summary>
+    <published>2026-07-06T10:00:00Z</published>
+    <author><name>Solo Author</name></author>
+    <category term="cs.CL"/>
+  </entry>
+</feed>
