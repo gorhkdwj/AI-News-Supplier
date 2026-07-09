@@ -32,6 +32,19 @@ npm run build
 
 빌드하면 `dist/cli/index.js`(CLI)와 `dist/mcp/server.js`(MCP 서버)가 생성됩니다.
 
+### 전역 `ains` 명령으로 쓰기
+
+프로젝트 폴더에서 다음을 실행하면 어느 터미널·폴더에서든 `ains` 명령을 쓸 수 있습니다.
+
+```bash
+npm link        # 또는: npm install -g .
+```
+
+이후 아래 예시의 `node dist/cli/index.js` 는 모두 `ains` 로 줄여 쓸 수 있습니다. (해제: `npm unlink -g ai-news-supplier`)
+
+> **PowerShell 팁**: 쉼표로 여러 값을 줄 때는 따옴표로 감싸십시오. PowerShell이 쉼표를 배열로 해석합니다.
+> `ains fetch --source "hackernews,arxiv"` (O) / `ains fetch --source hackernews,arxiv` (X)
+
 ## CLI 사용법
 
 ```bash

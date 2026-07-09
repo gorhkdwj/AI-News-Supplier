@@ -10,6 +10,29 @@
 
 ---
 
+### W-011 · 로컬 전역 설치 사용성 확인 및 문서 보강
+**요청**
+- API 키 발급 없이 어떻게 동작하는지, 로컬 터미널에 설치해 바로 쓸 수 있는지 확인
+
+**수행 작업**
+- 인증 실태 설명: 7소스 중 6종(HN·GitHub·RSS·HF·arXiv·DEV.to)은 공개 API/RSS로 키 불필요, Reddit만 키 게이트로 비활성
+- `npm link`로 전역 설치 후 프로젝트 밖에서 ains 동작 검증(9소스 실수집)
+- README에 전역 설치(npm link) 안내 및 PowerShell 쉼표 리스트 따옴표 팁 추가
+
+**변경 파일**
+- README.md
+
+**검증**
+- 프로젝트 밖 폴더에서 `ains fetch` → 9소스 정상(HN 66/GitHub 60/HF 55/arXiv 75/DEV.to 23/RSS 4종)
+- PowerShell 쉼표 이슈 재현: `--source hackernews,arxiv`(배열 해석 실패) vs `--source "hackernews,arxiv"`(정상). 도구 버그 아님(셸 특성)
+
+**판단 근거**
+- 실사용 진입 장벽(설치·인증)을 실제로 확인해 문서화
+
+**결과**
+- 완료: 전역 설치로 즉시 사용 가능 확인, 문서 보강
+- 참고: npm link는 로컬 개발 심링크(커밋 대상 아님). npm 레지스트리 배포는 여전히 미수행
+
 ### W-010 · S5 스케줄러·보존·배포 준비 (구현 목표 완주)
 **요청**
 - S5 단계(스케줄러 + retention + doctor 완성 + README + 배포 준비) 구현 및 검증
