@@ -23,6 +23,11 @@ function asString(v: unknown): string | null {
   return null;
 }
 
+function asNonBlankString(value: unknown): string | null {
+  const text = asString(value)?.trim();
+  return text ? text : null;
+}
+
 function asStrings(value: unknown): string[] {
   const values = Array.isArray(value) ? value : value == null ? [] : [value];
   return values.map(asString).filter((item): item is string => item !== null && item.length > 0);
@@ -51,6 +56,18 @@ function isFigmaAiItem(title: string, summary: string | null, categories: string
   return FIGMA_AI_MATCHERS.some((matcher) => matcher.test(text));
 }
 
+function publicationPrecision(
+  feedId: string,
+  publishedAt: string | null,
+  rawPublishedAt: string | null,
+): LiveSightingInput['publishedPrecision'] {
+  if (publishedAt === null) return 'inferred';
+  if (feedId === 'figma' || /^\d{4}-\d{2}-\d{2}$/.test(rawPublishedAt ?? '')) {
+    return 'date_only';
+  }
+  return 'exact_time';
+}
+
 function makeRssCollector(feed: RssFeed): Collector {
   const name = `rss:${feed.id}`;
   return {
@@ -76,7 +93,14 @@ function makeRssCollector(feed: RssFeed): Collector {
       let parsed: Parser.Output<Record<string, unknown>>;
       try {
         parsed = await new Parser<Record<string, unknown>, Record<string, unknown>>({
-          customFields: { item: [['category', 'categories', { keepArray: true }]] },
+          customFields: {
+            item: [
+              ['category', 'categories', { keepArray: true }],
+              ['pubDate', 'rawPubDate'],
+              ['updated', 'rawUpdated'],
+              ['published', 'rawPublished'],
+            ],
+          },
         }).parseString(res.text);
       } catch (err) {
         throw new CollectorError(name, 'parse', `RSS ${feed.id} 파싱 실패: ${String(err)}`);
@@ -94,6 +118,10 @@ function makeRssCollector(feed: RssFeed): Collector {
           asString(it.description);
         const categories = asStrings(it.categories);
         const publishedAt = asString(it.isoDate);
+        const rawPublishedAt =
+          asNonBlankString(it.rawPubDate) ??
+          asNonBlankString(it.rawUpdated) ??
+          asNonBlankString(it.rawPublished);
         if (feed.id === 'figma') {
           if (!isFigmaAiItem(title, summary, categories)) continue;
           if (ctx.config.retentionDays !== null && publishedAt !== null) {
@@ -104,7 +132,7 @@ function makeRssCollector(feed: RssFeed): Collector {
         }
         items.push({
           source: name,
-          sourceKey: asString(it.guid) ?? asString(it.id) ?? canonicalizeUrl(link),
+          sourceKey: asNonBlankString(it.guid) ?? asNonBlankString(it.id) ?? canonicalizeUrl(link),
           type: 'official_update',
           title,
           url: link,
@@ -116,8 +144,7 @@ function makeRssCollector(feed: RssFeed): Collector {
           commentsCount: null,
           tags: [feed.id, ...categories],
           publishedAt,
-          publishedPrecision:
-            publishedAt === null ? 'inferred' : feed.id === 'figma' ? 'date_only' : 'exact_time',
+          publishedPrecision: publicationPrecision(feed.id, publishedAt, rawPublishedAt),
           activityAt: null,
           raw: { feedId: feed.id },
         });

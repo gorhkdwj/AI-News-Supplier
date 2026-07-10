@@ -116,4 +116,38 @@ describe('RSS collectors', () => {
 
     expect(result.items[0]?.sourceKey).toBe('https://example.com/releases/ai?version=1');
   });
+
+  it('공백 GUID는 canonical link로 대체하고 custom feed의 날짜 전용 시각을 구분한다', async () => {
+    const config = defaultConfig();
+    config.sources.rss.feeds = [
+      { id: 'date-only', title: 'Date-only Feed', url: 'https://example.com/date-only.xml' },
+    ];
+    const xml = `<?xml version="1.0"?><rss version="2.0"><channel>
+      <title>Date only</title><link>https://example.com</link><description>Updates</description>
+      <item><title>AI release</title><guid>   </guid>
+      <link>https://example.com/releases/ai?utm_source=feed&amp;version=2</link>
+      <pubDate>2026-07-09</pubDate></item>
+      <item><title>AI follow-up</title><guid></guid>
+      <link>https://example.com/releases/ai?utm_source=feed&amp;version=3</link>
+      <pubDate>2026-07-10</pubDate></item>
+      </channel></rss>`;
+    const collector = makeRssCollectors(config)[0]!;
+    const result = await collector.fetch(
+      ctx(config, stubHttp([{ match: 'example.com/date-only.xml', body: xml }])),
+    );
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items.map((item) => item.sourceKey)).toEqual([
+      'https://example.com/releases/ai?version=2',
+      'https://example.com/releases/ai?version=3',
+    ]);
+    expect(result.items[0]).toMatchObject({
+      publishedAt: '2026-07-09T00:00:00.000Z',
+      publishedPrecision: 'date_only',
+    });
+    expect(result.items[1]).toMatchObject({
+      publishedAt: '2026-07-10T00:00:00.000Z',
+      publishedPrecision: 'date_only',
+    });
+  });
 });
