@@ -1,6 +1,7 @@
 import type { DB } from '../db/connection.js';
 import type { CollectedItem, ItemType, NewsItem } from '../types.js';
 import { canonicalizeUrl, itemId } from '../normalize.js';
+import { recomputeStoryPrimary, upsertLegacySighting } from './sightingStore.js';
 
 interface ItemRow {
   id: string;
@@ -57,7 +58,10 @@ export interface UpsertResult {
  * first_seen_at을 보존한다. 점수가 바뀌면 score_history에 스냅샷을 남긴다(항목당 최근 20개).
  */
 export function upsertItems(db: DB, items: CollectedItem[], nowIso?: string): UpsertResult {
-  const now = nowIso ?? new Date().toISOString();
+  const rawNow = nowIso ?? new Date().toISOString();
+  const parsedNow = new Date(rawNow);
+  if (Number.isNaN(parsedNow.getTime())) throw new Error(`Invalid observedAt: ${rawNow}`);
+  const now = parsedNow.toISOString();
 
   const selectExisting = db.prepare('SELECT score FROM items WHERE id = ?');
   const insert = db.prepare(
@@ -91,6 +95,7 @@ export function upsertItems(db: DB, items: CollectedItem[], nowIso?: string): Up
 
   const tx = db.transaction((list: CollectedItem[]): number => {
     let created = 0;
+    const affectedStoryIds = new Set<string>();
     for (const it of list) {
       const canonical = canonicalizeUrl(it.url);
       const id = itemId(canonical);
@@ -134,7 +139,10 @@ export function upsertItems(db: DB, items: CollectedItem[], nowIso?: string): Up
           capScore.run(id, id);
         }
       }
+      upsertLegacySighting(db, id, canonical, it, now);
+      affectedStoryIds.add(id);
     }
+    for (const storyId of affectedStoryIds) recomputeStoryPrimary(db, storyId);
     return created;
   });
 
@@ -179,7 +187,10 @@ export interface SearchQuery {
 /** FTS5 전문 검색. bm25 관련도 순으로 반환한다. */
 export function searchItems(db: DB, query: string, opts: SearchQuery): NewsItem[] {
   const sinceIso = new Date(Date.now() - opts.sinceDays * 86_400_000).toISOString();
-  const conds: string[] = ['items_fts MATCH ?', '(items.published_at >= ? OR items.published_at IS NULL)'];
+  const conds: string[] = [
+    'items_fts MATCH ?',
+    '(items.published_at >= ? OR items.published_at IS NULL)',
+  ];
   const params: unknown[] = [toFtsQuery(query), sinceIso];
 
   if (opts.types && opts.types.length > 0) {
@@ -217,9 +228,14 @@ export function countItemsBySource(db: DB): Record<string, number> {
 }
 
 /** 점수 이력을 관측시각 오름차순으로 반환한다(velocity 계산용). */
-export function getScoreHistory(db: DB, itemId: string): { observedAt: string; score: number | null }[] {
+export function getScoreHistory(
+  db: DB,
+  itemId: string,
+): { observedAt: string; score: number | null }[] {
   const rows = db
-    .prepare('SELECT observed_at, score FROM score_history WHERE item_id = ? ORDER BY observed_at ASC')
+    .prepare(
+      'SELECT observed_at, score FROM score_history WHERE item_id = ? ORDER BY observed_at ASC',
+    )
     .all(itemId) as { observed_at: string; score: number | null }[];
   return rows.map((r) => ({ observedAt: r.observed_at, score: r.score }));
 }

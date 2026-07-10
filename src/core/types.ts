@@ -1,11 +1,5 @@
 /** 정규화된 항목의 유형. (요구사항 계약 문서 기준) */
-export type ItemType =
-  | 'community'
-  | 'official_update'
-  | 'hot_repo'
-  | 'model'
-  | 'paper'
-  | 'article';
+export type ItemType = 'community' | 'official_update' | 'hot_repo' | 'model' | 'paper' | 'article';
 
 export const ITEM_TYPES: readonly ItemType[] = [
   'community',
@@ -36,6 +30,45 @@ export interface CollectedItem {
   publishedAt: string | null;
   /** 소스 원본 페이로드(핵심만 추려 보관). JSON 직렬화 가능해야 한다. */
   raw: unknown;
+}
+
+/** 원천이 제공한 게시 시각의 정밀도. */
+export type PublishedPrecision = 'exact_time' | 'date_only' | 'inferred';
+
+/** Sighting이 라이브 관측인지 마이그레이션 호환 행인지 구분한다. */
+export type SightingQuality = 'live' | 'legacy_unverified';
+
+/** 지원하는 v2 성장률 기준 시점. */
+export type BaselineHorizon = '6h' | '24h' | '7d';
+
+/** 수집기가 Sighting 저장소에 넘기는 정규화된 라이브 관측. */
+export interface LiveSightingInput extends CollectedItem {
+  sourceKey: string;
+  discussionUrl: string | null;
+  scoreKind: string | null;
+  activityAt: string | null;
+  publishedPrecision: PublishedPrecision;
+}
+
+/** 한 시간 버킷에 저장된 Sighting 지표 관측. */
+export interface MetricSnapshot {
+  sightingId: string;
+  bucketAt: string;
+  observedAt: string;
+  score: number | null;
+  commentsCount: number | null;
+}
+
+/** DB에 저장된 소스별 Story 관측. */
+export interface SourceSighting extends LiveSightingInput {
+  id: string;
+  storyId: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  quality: SightingQuality;
+  verifiedAt: string | null;
+  isPrimary: boolean;
+  metricHistory: MetricSnapshot[];
 }
 
 /** DB에 저장/조회되는 완전한 항목 형태. */
