@@ -1,0 +1,3265 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="ai-news-supplier(ains) CLI와 MCP의 설치, 기능, 작업 예시, 설정과 문제 해결을 다루는 공식 사용 설명서"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>ains 사용 설명서 · CLI &amp; MCP</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f5f2;
+        --surface: #ffffff;
+        --surface-muted: #eef1ed;
+        --ink: #16201d;
+        --muted: #5e6a66;
+        --line: #d8ded9;
+        --line-strong: #b7c2bc;
+        --brand: #145c4f;
+        --brand-strong: #0c4037;
+        --brand-soft: #dceee8;
+        --accent: #ef8c45;
+        --accent-soft: #fff0e4;
+        --code-bg: #111a18;
+        --code-ink: #e9f2ee;
+        --danger: #9b2c2c;
+        --danger-soft: #fce8e8;
+        --warning: #80520b;
+        --warning-soft: #fff4d8;
+        --info: #245b88;
+        --info-soft: #e6f1fa;
+        --shadow: 0 18px 50px rgba(25, 45, 38, 0.08);
+        --sidebar-width: 18rem;
+        --content-width: 76rem;
+        --radius-sm: 0.5rem;
+        --radius-md: 0.9rem;
+        --radius-lg: 1.35rem;
+        --sans: Pretendard, 'Noto Sans KR', 'Segoe UI', Arial, sans-serif;
+        --mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+      }
+
+      html[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0f1513;
+        --surface: #17201d;
+        --surface-muted: #1d2925;
+        --ink: #edf4f1;
+        --muted: #a9b7b1;
+        --line: #33423c;
+        --line-strong: #52635c;
+        --brand: #70c7b3;
+        --brand-strong: #a8e5d6;
+        --brand-soft: #203b34;
+        --accent: #f2a36a;
+        --accent-soft: #4b2f1e;
+        --code-bg: #090e0c;
+        --code-ink: #e9f2ee;
+        --danger: #ff9b9b;
+        --danger-soft: #492424;
+        --warning: #f5c369;
+        --warning-soft: #493a1c;
+        --info: #8bc7f5;
+        --info-soft: #20394b;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 5rem;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 1rem;
+        line-height: 1.72;
+        text-rendering: optimizeLegibility;
+      }
+
+      body.nav-open {
+        overflow: hidden;
+      }
+
+      a {
+        color: var(--brand);
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: var(--brand-strong);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .skip-link {
+        position: fixed;
+        z-index: 100;
+        top: 0.8rem;
+        left: 0.8rem;
+        transform: translateY(-160%);
+        border-radius: var(--radius-sm);
+        background: var(--ink);
+        color: var(--surface);
+        padding: 0.65rem 0.9rem;
+        text-decoration: none;
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .layout {
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: fixed;
+        z-index: 30;
+        inset: 0 auto 0 0;
+        width: var(--sidebar-width);
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface) 94%, transparent);
+        padding: 1.6rem 1.25rem 2rem;
+        backdrop-filter: blur(16px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 2.6rem;
+        height: 2.6rem;
+        place-items: center;
+        border: 1px solid var(--brand);
+        border-radius: 50%;
+        background: var(--brand);
+        color: var(--surface);
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: -0.06em;
+      }
+
+      .brand-copy strong,
+      .brand-copy small {
+        display: block;
+      }
+
+      .brand-copy strong {
+        font-size: 1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-copy small {
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .version-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 1.15rem 0 1.25rem;
+        border-block: 1px solid var(--line);
+        padding: 0.8rem 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .version-badge {
+        border: 1px solid var(--line-strong);
+        border-radius: 99rem;
+        padding: 0.16rem 0.55rem;
+        color: var(--brand-strong);
+        font-family: var(--mono);
+      }
+
+      .sidebar-nav-group {
+        margin-top: 1.15rem;
+      }
+
+      .sidebar-nav-group > p {
+        margin: 0 0 0.35rem;
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .sidebar nav a {
+        display: block;
+        margin: 0.08rem 0;
+        border-left: 2px solid transparent;
+        padding: 0.43rem 0.6rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+        text-decoration: none;
+      }
+
+      .sidebar nav a:hover,
+      .sidebar nav a.active {
+        border-left-color: var(--brand);
+        background: var(--brand-soft);
+        color: var(--brand-strong);
+      }
+
+      .sidebar-footer {
+        margin-top: 1.6rem;
+        border-top: 1px solid var(--line);
+        padding-top: 1rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .main-shell {
+        margin-left: var(--sidebar-width);
+      }
+
+      .topbar {
+        position: sticky;
+        z-index: 20;
+        top: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 4.2rem;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--bg) 88%, transparent);
+        padding: 0.7rem clamp(1rem, 4vw, 3rem);
+        backdrop-filter: blur(18px);
+      }
+
+      .menu-button,
+      .theme-button,
+      .icon-button {
+        display: inline-flex;
+        min-width: 2.55rem;
+        min-height: 2.55rem;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        cursor: pointer;
+      }
+
+      .menu-button {
+        display: none;
+      }
+
+      .theme-button {
+        flex: 0 0 auto;
+        font-size: 0.82rem;
+      }
+
+      .search-wrap {
+        position: relative;
+        width: min(42rem, 100%);
+        margin-inline: auto;
+      }
+
+      .search-wrap input {
+        width: 100%;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--ink);
+        padding: 0.7rem 5.4rem 0.7rem 2.7rem;
+      }
+
+      .search-wrap::before {
+        position: absolute;
+        z-index: 1;
+        top: 50%;
+        left: 0.9rem;
+        content: '⌕';
+        color: var(--muted);
+        font-size: 1.2rem;
+        transform: translateY(-53%);
+      }
+
+      .search-hint {
+        position: absolute;
+        top: 50%;
+        right: 0.6rem;
+        border: 1px solid var(--line);
+        border-radius: 0.3rem;
+        padding: 0.1rem 0.42rem;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        transform: translateY(-50%);
+      }
+
+      .search-results {
+        position: absolute;
+        z-index: 50;
+        top: calc(100% + 0.45rem);
+        right: 0;
+        left: 0;
+        max-height: min(28rem, 70vh);
+        overflow-y: auto;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        padding: 0.45rem;
+      }
+
+      .search-results[hidden] {
+        display: none;
+      }
+
+      .search-result {
+        display: block;
+        border-radius: var(--radius-sm);
+        padding: 0.62rem 0.75rem;
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .search-result:hover,
+      .search-result:focus-visible {
+        background: var(--brand-soft);
+      }
+
+      .search-result strong,
+      .search-result small {
+        display: block;
+      }
+
+      .search-result small {
+        overflow: hidden;
+        color: var(--muted);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .search-empty {
+        margin: 0;
+        padding: 0.85rem;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      main {
+        width: min(var(--content-width), calc(100% - 2rem));
+        margin-inline: auto;
+        padding: 3.5rem clamp(0rem, 2vw, 1.5rem) 7rem;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        padding: clamp(2rem, 6vw, 5.5rem);
+      }
+
+      .hero::after {
+        position: absolute;
+        right: -5rem;
+        bottom: -8rem;
+        width: 22rem;
+        height: 22rem;
+        border: 4.5rem solid var(--brand-soft);
+        border-radius: 50%;
+        content: '';
+        opacity: 0.8;
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        margin: 0 0 1rem;
+        color: var(--brand);
+        font-family: var(--mono);
+        font-size: 0.77rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .hero h1 {
+        position: relative;
+        z-index: 1;
+        max-width: 18ch;
+        margin: 0;
+        font-size: clamp(2.45rem, 7vw, 5.4rem);
+        font-weight: 760;
+        letter-spacing: -0.065em;
+        line-height: 0.98;
+      }
+
+      .hero .lead {
+        position: relative;
+        z-index: 1;
+        max-width: 48rem;
+        margin: 1.6rem 0 0;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 2vw, 1.32rem);
+      }
+
+      .hero-actions {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      .button-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--brand);
+        border-radius: var(--radius-sm);
+        background: var(--brand);
+        color: #fff;
+        padding: 0.68rem 1rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .button-link.secondary {
+        background: transparent;
+        color: var(--brand-strong);
+      }
+
+      .hero-meta {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem 1.5rem;
+        margin-top: 2.25rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .hero-meta span::before {
+        margin-right: 0.42rem;
+        content: '●';
+        color: var(--accent);
+        font-size: 0.55rem;
+        vertical-align: 0.14em;
+      }
+
+      section {
+        margin-top: clamp(4rem, 8vw, 7rem);
+      }
+
+      .section-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(14rem, 28rem);
+        gap: 1.5rem 3rem;
+        align-items: end;
+        margin-bottom: 1.8rem;
+        border-bottom: 1px solid var(--line-strong);
+        padding-bottom: 1.25rem;
+      }
+
+      .section-heading h2 {
+        margin: 0;
+        font-size: clamp(1.85rem, 4vw, 3rem);
+        letter-spacing: -0.045em;
+        line-height: 1.12;
+      }
+
+      .section-heading p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      h3 {
+        margin: 2.2rem 0 0.75rem;
+        font-size: 1.35rem;
+        letter-spacing: -0.02em;
+      }
+
+      h4 {
+        margin: 1.4rem 0 0.45rem;
+        font-size: 1.04rem;
+      }
+
+      p {
+        margin: 0.65rem 0 1rem;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        padding: 1.25rem;
+      }
+
+      .card h3,
+      .card h4 {
+        margin-top: 0;
+      }
+
+      .card p:last-child,
+      .card ul:last-child {
+        margin-bottom: 0;
+      }
+
+      .number-card {
+        position: relative;
+        padding-top: 3.8rem;
+      }
+
+      .number-card .number {
+        position: absolute;
+        top: 1rem;
+        left: 1.2rem;
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .stat-card strong {
+        display: block;
+        color: var(--brand-strong);
+        font-size: 1.75rem;
+        letter-spacing: -0.04em;
+      }
+
+      .stat-card span {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
+        margin: 1.5rem 0;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+      }
+
+      .flow-item {
+        position: relative;
+        background: var(--surface);
+        padding: 1.1rem;
+        text-align: center;
+      }
+
+      .flow-item + .flow-item {
+        border-left: 1px solid var(--line);
+      }
+
+      .flow-item + .flow-item::before {
+        position: absolute;
+        z-index: 1;
+        top: 50%;
+        left: 0;
+        width: 1.4rem;
+        height: 1.4rem;
+        border: 1px solid var(--line);
+        border-width: 1px 1px 0 0;
+        background: var(--surface);
+        content: '';
+        transform: translate(-50%, -50%) rotate(45deg);
+      }
+
+      .flow-item strong,
+      .flow-item span {
+        position: relative;
+        z-index: 2;
+        display: block;
+      }
+
+      .flow-item strong {
+        margin-bottom: 0.25rem;
+      }
+
+      .flow-item span {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      code,
+      kbd {
+        font-family: var(--mono);
+      }
+
+      :not(pre) > code {
+        border: 1px solid var(--line);
+        border-radius: 0.28rem;
+        background: var(--surface-muted);
+        padding: 0.08rem 0.32rem;
+        color: var(--brand-strong);
+        font-size: 0.88em;
+        overflow-wrap: anywhere;
+      }
+
+      .code-block {
+        position: relative;
+        margin: 1rem 0 1.4rem;
+      }
+
+      .code-label {
+        position: absolute;
+        z-index: 2;
+        top: 0.72rem;
+        left: 0.9rem;
+        color: #91aaa1;
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        border: 1px solid color-mix(in srgb, var(--code-bg), #fff 10%);
+        border-radius: var(--radius-md);
+        background: var(--code-bg);
+        color: var(--code-ink);
+        padding: 2.8rem 1rem 1rem;
+        font-family: var(--mono);
+        font-size: 0.84rem;
+        line-height: 1.65;
+        tab-size: 2;
+      }
+
+      pre code {
+        font: inherit;
+      }
+
+      .copy-button {
+        position: absolute;
+        z-index: 3;
+        top: 0.55rem;
+        right: 0.55rem;
+        border: 1px solid #40514b;
+        border-radius: 0.38rem;
+        background: #1c2925;
+        color: #dce8e3;
+        padding: 0.3rem 0.55rem;
+        cursor: pointer;
+        font-size: 0.72rem;
+      }
+
+      .copy-button:hover {
+        background: #2b3c36;
+      }
+
+      .callout {
+        margin: 1.25rem 0;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--info);
+        border-radius: var(--radius-sm);
+        background: var(--info-soft);
+        padding: 1rem 1.1rem;
+      }
+
+      .callout.warning {
+        border-left-color: var(--warning);
+        background: var(--warning-soft);
+      }
+
+      .callout.danger {
+        border-left-color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .callout.success {
+        border-left-color: var(--brand);
+        background: var(--brand-soft);
+      }
+
+      .callout strong:first-child {
+        display: block;
+        margin-bottom: 0.3rem;
+      }
+
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+
+      .table-wrap {
+        margin: 1.1rem 0 1.6rem;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 0.78rem 0.85rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--surface-muted);
+        color: var(--muted);
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      tbody tr:hover td {
+        background: color-mix(in srgb, var(--brand-soft) 45%, transparent);
+      }
+
+      .pill {
+        display: inline-block;
+        margin: 0.08rem 0.18rem 0.08rem 0;
+        border: 1px solid var(--line-strong);
+        border-radius: 99rem;
+        padding: 0.1rem 0.5rem;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        white-space: nowrap;
+      }
+
+      .pill.read {
+        border-color: var(--info);
+        color: var(--info);
+      }
+
+      .pill.write {
+        border-color: var(--warning);
+        color: var(--warning);
+      }
+
+      .pill.network {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .tabset {
+        margin: 1.2rem 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+        overflow: hidden;
+      }
+
+      .tab-list {
+        display: flex;
+        gap: 0.2rem;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface-muted);
+        padding: 0.45rem;
+      }
+
+      .tab-button {
+        flex: 0 0 auto;
+        border: 1px solid transparent;
+        border-radius: 0.38rem;
+        background: transparent;
+        padding: 0.48rem 0.75rem;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .tab-button[aria-selected='true'] {
+        border-color: var(--line);
+        background: var(--surface);
+        color: var(--brand-strong);
+      }
+
+      .tab-panel {
+        padding: 1rem;
+      }
+
+      .tab-panel[hidden] {
+        display: none;
+      }
+
+      .tab-panel .code-block:last-child {
+        margin-bottom: 0;
+      }
+
+      details {
+        margin: 0.75rem 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: var(--surface);
+      }
+
+      summary {
+        position: relative;
+        padding: 1rem 3rem 1rem 1rem;
+        cursor: pointer;
+        font-weight: 750;
+        list-style: none;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      summary::after {
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        content: '+';
+        color: var(--brand);
+        font-family: var(--mono);
+        font-size: 1.25rem;
+        transform: translateY(-50%);
+      }
+
+      details[open] summary::after {
+        content: '−';
+      }
+
+      .details-body {
+        border-top: 1px solid var(--line);
+        padding: 0.25rem 1rem 1rem;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: 2.2rem minmax(0, 1fr);
+        gap: 0 0.8rem;
+        margin: 1rem 0;
+      }
+
+      .workflow-index {
+        display: grid;
+        width: 2.2rem;
+        height: 2.2rem;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--brand);
+        color: #fff;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      .workflow-body {
+        border-left: 1px solid var(--line-strong);
+        padding: 0 0 1.4rem 1rem;
+      }
+
+      .workflow:last-child .workflow-body {
+        border-left-color: transparent;
+      }
+
+      .workflow-body h4 {
+        margin-top: 0.25rem;
+      }
+
+      .plain-list,
+      .check-list {
+        padding-left: 1.15rem;
+      }
+
+      .check-list {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      .check-list li {
+        position: relative;
+        margin: 0.45rem 0;
+        padding-left: 1.5rem;
+      }
+
+      .check-list li::before {
+        position: absolute;
+        left: 0;
+        content: '✓';
+        color: var(--brand);
+        font-weight: 900;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .small {
+        font-size: 0.82rem;
+      }
+
+      .footer {
+        margin-top: 6rem;
+        border-top: 1px solid var(--line-strong);
+        padding-top: 1.4rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .backdrop {
+        display: none;
+      }
+
+      @media (max-width: 72rem) {
+        .grid-4 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .flow {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-item + .flow-item {
+          border-top: 1px solid var(--line);
+          border-left: 0;
+        }
+
+        .flow-item + .flow-item::before {
+          top: 0;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(135deg);
+        }
+      }
+
+      @media (max-width: 60rem) {
+        .sidebar {
+          transform: translateX(-105%);
+          transition: transform 180ms ease;
+        }
+
+        body.nav-open .sidebar {
+          transform: translateX(0);
+        }
+
+        .backdrop {
+          position: fixed;
+          z-index: 25;
+          inset: 0;
+          display: block;
+          border: 0;
+          background: rgba(4, 10, 8, 0.56);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 180ms ease;
+        }
+
+        body.nav-open .backdrop {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .main-shell {
+          margin-left: 0;
+        }
+
+        .menu-button {
+          display: inline-flex;
+        }
+
+        .search-hint {
+          display: none;
+        }
+
+        .search-wrap input {
+          padding-right: 0.8rem;
+        }
+
+        .section-heading {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 42rem) {
+        main {
+          width: min(100% - 1.2rem, var(--content-width));
+          padding-top: 1.2rem;
+        }
+
+        .topbar {
+          padding-inline: 0.6rem;
+        }
+
+        .theme-button {
+          font-size: 0;
+        }
+
+        .theme-button::before {
+          content: '◐';
+          font-size: 1rem;
+        }
+
+        .hero {
+          padding: 2rem 1.25rem 2.4rem;
+        }
+
+        .hero::after {
+          right: -10rem;
+          opacity: 0.45;
+        }
+
+        .grid-2,
+        .grid-3,
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @media print {
+        :root {
+          --bg: #fff;
+          --surface: #fff;
+          --ink: #111;
+          --muted: #444;
+          --line: #bbb;
+          --line-strong: #888;
+        }
+
+        .sidebar,
+        .topbar,
+        .backdrop,
+        .copy-button,
+        .hero-actions {
+          display: none !important;
+        }
+
+        .main-shell {
+          margin: 0;
+        }
+
+        main {
+          width: 100%;
+          max-width: none;
+          padding: 0;
+        }
+
+        .hero,
+        .card,
+        details,
+        .table-wrap {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+
+        details:not([open]) > *:not(summary) {
+          display: block;
+        }
+
+        a {
+          color: inherit;
+          text-decoration: none;
+        }
+
+        section {
+          break-before: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+    <div class="layout">
+      <aside class="sidebar" id="sidebar" aria-label="문서 목차">
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true">ai/</span>
+          <span class="brand-copy">
+            <strong>ains 사용 설명서</strong>
+            <small>CLI &amp; MCP field guide</small>
+          </span>
+        </a>
+        <div class="version-row">
+          <span>문서 기준</span>
+          <span class="version-badge">v0.1.0</span>
+        </div>
+        <nav>
+          <div class="sidebar-nav-group">
+            <p>시작하기</p>
+            <a href="#overview">개발 배경과 특징</a>
+            <a href="#quickstart">설치와 빠른 시작</a>
+            <a href="#concepts">핵심 개념</a>
+          </div>
+          <div class="sidebar-nav-group">
+            <p>사용하기</p>
+            <a href="#cli">CLI 전체 기능</a>
+            <a href="#trends">트렌드 랭킹</a>
+            <a href="#mcp-setup">MCP 연결</a>
+            <a href="#mcp-tools">MCP 도구 9개</a>
+            <a href="#workflows">작업 예시 10가지</a>
+            <a href="#output">결과 해석</a>
+          </div>
+          <div class="sidebar-nav-group">
+            <p>운영하기</p>
+            <a href="#sources">데이터 소스</a>
+            <a href="#configuration">설정과 인증</a>
+            <a href="#data-policy">데이터와 보안</a>
+            <a href="#cautions">주의사항과 한계</a>
+            <a href="#troubleshooting">문제 해결</a>
+            <a href="#cheatsheet">치트시트</a>
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <p>최종 갱신: 2026-07-10</p>
+          <p>MIT License · 로컬 우선 · Node.js 20+</p>
+        </div>
+      </aside>
+
+      <button class="backdrop" id="backdrop" type="button" aria-label="목차 닫기"></button>
+
+      <div class="main-shell">
+        <header class="topbar">
+          <button
+            class="menu-button"
+            id="menu-button"
+            type="button"
+            aria-controls="sidebar"
+            aria-expanded="false"
+            aria-label="목차 열기"
+          >
+            ☰
+          </button>
+          <div class="search-wrap" role="search">
+            <label class="sr-only" for="doc-search">설명서 검색</label>
+            <input
+              id="doc-search"
+              type="search"
+              placeholder="명령, 도구, 오류를 검색하십시오"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="search-results"
+              aria-expanded="false"
+            />
+            <span class="search-hint" aria-hidden="true">Ctrl K</span>
+            <div class="search-results" id="search-results" role="listbox" hidden></div>
+          </div>
+          <button class="theme-button" id="theme-button" type="button" aria-label="색상 테마 전환">
+            어두운 화면
+          </button>
+        </header>
+
+        <main id="main-content">
+          <article class="hero" id="top">
+            <p class="eyebrow">AI NEWS SUPPLIER · USER MANUAL</p>
+            <h1>AI 소식을 모으고, 에이전트의 맥락으로 건넵니다.</h1>
+            <p class="lead">
+              <strong>ains</strong>는 공개 API와 RSS/Atom의 AI 소식을 로컬 SQLite에 축적하고, 사람이
+              쓰는 CLI와 에이전트가 쓰는 MCP로 같은 데이터와 기능을 제공합니다.
+            </p>
+            <div class="hero-actions">
+              <a class="button-link" href="#quickstart">5분 안에 시작하기</a>
+              <a class="button-link secondary" href="#workflows">작업 예시 보기</a>
+            </div>
+            <div class="hero-meta" aria-label="프로젝트 핵심 정보">
+              <span>Node.js 20 이상</span>
+              <span>로컬 SQLite</span>
+              <span>CLI 10개 영역</span>
+              <span>MCP 도구 9개</span>
+              <span>자체 LLM 호출 없음</span>
+            </div>
+          </article>
+
+          <section id="overview" aria-labelledby="overview-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">01 · WHY AINS</p>
+                <h2 id="overview-title">개발 배경과 특징</h2>
+              </div>
+              <p>
+                흩어진 AI 소식을 에이전트가 다시 사용할 수 있는 로컬 데이터로 만들고, 출처마다 다른
+                ‘화제성’을 같은 잣대로 섞지 않는 것이 출발점입니다.
+              </p>
+            </div>
+
+            <div class="grid-3">
+              <article class="card number-card">
+                <span class="number">PROBLEM 01</span>
+                <h3>소식이 흩어져 있습니다</h3>
+                <p>
+                  공식 블로그, GitHub, 커뮤니티와 논문 사이트를 각각 찾아야 하며, 다음 날 같은
+                  조사를 반복하게 됩니다.
+                </p>
+              </article>
+              <article class="card number-card">
+                <span class="number">PROBLEM 02</span>
+                <h3>점수의 의미가 다릅니다</h3>
+                <p>
+                  GitHub 별, HN points, Reddit upvotes와 공식 발표의 중요도는 서로 직접 비교할 수
+                  없는 신호입니다.
+                </p>
+              </article>
+              <article class="card number-card">
+                <span class="number">SOLUTION</span>
+                <h3>로컬에 모아 유형별로 봅니다</h3>
+                <p>
+                  출처 관측을 분리해 보존하고 Community, Official, Repos, Research에 각기 다른
+                  랭킹을 적용합니다.
+                </p>
+              </article>
+            </div>
+
+            <div class="flow" aria-label="ains 데이터 흐름">
+              <div class="flow-item"><strong>공개 소스</strong><span>API · RSS · Atom</span></div>
+              <div class="flow-item"><strong>수집기</strong><span>실패 격리 · 정규화</span></div>
+              <div class="flow-item">
+                <strong>로컬 DB</strong><span>Story · Sighting · FTS</span>
+              </div>
+              <div class="flow-item"><strong>CLI / MCP</strong><span>같은 코어 기능</span></div>
+              <div class="flow-item">
+                <strong>사용자 / 에이전트</strong><span>브리핑 · 조사 · 학습</span>
+              </div>
+            </div>
+
+            <div class="grid-4">
+              <div class="card stat-card"><strong>0원</strong><span>별도 서버 운영비</span></div>
+              <div class="card stat-card"><strong>9개</strong><span>MCP 공개 도구 수</span></div>
+              <div class="card stat-card">
+                <strong>14일</strong><span>일반 지표 관측 보존</span>
+              </div>
+              <div class="card stat-card">
+                <strong>48시간</strong><span>Reddit 데이터 최대 보존</span>
+              </div>
+            </div>
+
+            <div class="callout success">
+              <strong>도구와 지능의 역할을 분리합니다.</strong>
+              <p>
+                <code>ains</code>는 수집·저장·검색·랭킹과 학습 근거 패키징을 담당합니다. 번역, 요약,
+                설명과 학습 진행은 데이터를 받은 Codex 같은 에이전트가 수행합니다.
+              </p>
+            </div>
+          </section>
+
+          <section id="quickstart" aria-labelledby="quickstart-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">02 · GET STARTED</p>
+                <h2 id="quickstart-title">설치와 빠른 시작</h2>
+              </div>
+              <p>
+                현재 버전은 npm 공개 배포 전 단계입니다. 저장소를 내려받아 빌드하고 전역 명령을
+                연결합니다.
+              </p>
+            </div>
+
+            <div class="callout warning">
+              <strong>필수 환경</strong>
+              <p>
+                Node.js 20 이상과 npm이 필요합니다. Windows를 우선 지원하며 macOS와 Linux에서도
+                Node.js 환경으로 실행할 수 있습니다.
+              </p>
+            </div>
+
+            <div class="workflow">
+              <div class="workflow-index">1</div>
+              <div class="workflow-body">
+                <h4>저장소를 복제하고 의존성을 설치합니다</h4>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>git clone https://github.com/gorhkdwj/AI-News-Supplier.git
+cd AI-News-Supplier
+npm install</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="workflow">
+              <div class="workflow-index">2</div>
+              <div class="workflow-body">
+                <h4>빌드하고 CLI·MCP 실행 파일을 전역에 연결합니다</h4>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>npm run build
+npm link
+ains --version</code></pre>
+                </div>
+                <p class="muted small">
+                  <code>npm link</code> 없이 시험하려면 <code>node dist/cli/index.js --help</code>를
+                  사용할 수 있습니다.
+                </p>
+              </div>
+            </div>
+            <div class="workflow">
+              <div class="workflow-index">3</div>
+              <div class="workflow-body">
+                <h4>환경과 DB를 점검합니다</h4>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains doctor</code></pre>
+                </div>
+                <p>
+                  Node.js 버전, 데이터 경로, DB 무결성, 스키마 버전과 소스별 상태가 표시됩니다.
+                  오류가 있으면 수집 전에 먼저 해결하십시오.
+                </p>
+              </div>
+            </div>
+            <div class="workflow">
+              <div class="workflow-index">4</div>
+              <div class="workflow-body">
+                <h4>첫 데이터를 수집하고 조회합니다</h4>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains fetch
+ains trends --limit 12
+ains trends --ranking v2 --channel overview --sort briefing --limit 12</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>PowerShell에서 여러 소스를 지정할 때</strong>
+              <p>
+                쉼표 목록은 문자열로 묶는 편이 안전합니다. 예:
+                <code>ains fetch --source "hackernews,github"</code>
+              </p>
+            </div>
+          </section>
+
+          <section id="concepts" aria-labelledby="concepts-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">03 · MENTAL MODEL</p>
+                <h2 id="concepts-title">핵심 개념</h2>
+              </div>
+              <p>
+                결과와 점수를 올바르게 해석하려면 Story와 출처 관측의 차이를 먼저 이해해야 합니다.
+              </p>
+            </div>
+
+            <div class="grid-3">
+              <article class="card">
+                <h3>Story</h3>
+                <p>
+                  하나의 원문 또는 사건을 나타내는 이야기 단위입니다. ID, 검색 인덱스와 학습 이력의
+                  기준이며 같은 URL의 여러 출처 관측을 하나로 묶습니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>Sighting</h3>
+                <p>
+                  Story를 특정 소스에서 발견한 기록입니다. RSS 항목, HN 글, Reddit 글, GitHub
+                  저장소처럼 출처별 URL·점수·댓글·작성자 정보를 독립적으로 보존합니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>Metric Snapshot</h3>
+                <p>
+                  Sighting의 점수와 댓글 수를 1시간 UTC 버킷으로 관측한 값입니다. 값이 같아도
+                  기록하며 6시간·24시간·7일 성장률의 근거가 됩니다.
+                </p>
+              </article>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>채널</th>
+                    <th>포함 내용</th>
+                    <th>주요 판단 신호</th>
+                    <th>기본 보기</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>overview</code></td>
+                    <td>네 채널을 균등 할당 후 부족분 재배분</td>
+                    <td>채널별 결과 조합, Story 중복 제거</td>
+                    <td><code>briefing</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>community</code></td>
+                    <td>HN, Reddit, DEV.to</td>
+                    <td>추천·댓글 수준, 6h·24h 속도, 시간 감쇠</td>
+                    <td><code>hot</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>official</code></td>
+                    <td>공식 RSS·Atom·정식 Releases</td>
+                    <td>발행 시각 또는 결정적 영향 등급</td>
+                    <td><code>latest</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>repos</code></td>
+                    <td>AI 관련 GitHub 저장소</td>
+                    <td>별 증가, 누적 별, 최근 push</td>
+                    <td><code>trending</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>research</code></td>
+                    <td>모델, 논문, DEV 외 article</td>
+                    <td>기존 research_hot_v1</td>
+                    <td><code>hot</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="callout warning">
+              <strong>채널 간 점수를 비교하지 마십시오.</strong>
+              <p>
+                Repo의 0.8과 Community의 0.8은 같은 의미가 아닙니다. <code>ranking.kind</code>가
+                같은 결과 안에서 순서와 근거를 해석하십시오.
+              </p>
+            </div>
+          </section>
+
+          <section id="cli" aria-labelledby="cli-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">04 · CLI REFERENCE</p>
+                <h2 id="cli-title">CLI 전체 기능</h2>
+              </div>
+              <p>
+                <code>ains &lt;command&gt; --help</code>로 언제든 현재 설치 버전의 옵션을 확인할 수
+                있습니다.
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>명령</th>
+                    <th>역할</th>
+                    <th>네트워크·변경</th>
+                    <th>대표 예시</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>trends</code></td>
+                    <td>트렌드 조회</td>
+                    <td>TTL이 지난 소스 자동 갱신</td>
+                    <td><code>ains trends --limit 20</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>fetch</code></td>
+                    <td>최신 항목 수집</td>
+                    <td>네트워크·DB 변경</td>
+                    <td><code>ains fetch --force</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>search</code></td>
+                    <td>FTS 전문 검색</td>
+                    <td>로컬 조회</td>
+                    <td><code>ains search "agents"</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>show</code></td>
+                    <td>Story 상세 조회</td>
+                    <td>로컬 조회</td>
+                    <td><code>ains show &lt;id&gt;</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>doctor</code></td>
+                    <td>환경·DB 진단</td>
+                    <td>로컬 조회</td>
+                    <td><code>ains doctor</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>mcp</code></td>
+                    <td>STDIO MCP 서버 실행</td>
+                    <td>에이전트 연결용</td>
+                    <td><code>ains mcp</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>learn</code></td>
+                    <td>학습 후보·세션·기록</td>
+                    <td>일부 자동 갱신·기록</td>
+                    <td><code>ains learn candidates</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>history</code></td>
+                    <td>학습 이력 조회</td>
+                    <td>로컬 조회</td>
+                    <td><code>ains history</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>schedule</code></td>
+                    <td>정기 수집 등록·해제</td>
+                    <td>OS 스케줄 변경</td>
+                    <td><code>ains schedule status</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>config</code></td>
+                    <td>설정 경로·초기화·편집</td>
+                    <td>일부 파일 변경</td>
+                    <td><code>ains config show</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <details open>
+              <summary><code>ains trends</code> · 유형별 트렌드 조회</summary>
+              <div class="details-body">
+                <p>
+                  랭킹 버전, 채널과 정렬을 지정해 최근 AI 소식을 조회합니다. 기본적으로 TTL이 지난
+                  소스를 수집한 뒤 결과를 반환하며 <code>--no-refresh</code>로 로컬 DB만 사용할 수
+                  있습니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains trends --limit 20
+ains trends --ranking v2 --channel community --sort hot --hours 48
+ains trends --ranking v2 --channel official --sort latest --json
+ains trends --ranking v2 --channel repos --sort discovery --no-refresh</code></pre>
+                </div>
+                <p>
+                  옵션: <code>--ranking</code>, <code>--channel</code>, <code>--sort</code>,
+                  <code>--limit</code>, <code>--source</code>, <code>--type</code>,
+                  <code>--hours</code>, <code>--no-refresh</code>, <code>--json</code>
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>ains fetch</code> · 최신 데이터 수집</summary>
+              <div class="details-body">
+                <p>
+                  활성 소스를 수집합니다. TTL이 남아 있으면 건너뛰며 <code>--force</code>는 TTL을
+                  무시합니다. 하나의 소스가 실패해도 다른 소스 결과는 저장됩니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains fetch
+ains fetch --source "hackernews,github" --force
+ains fetch --quiet
+ains fetch --json</code></pre>
+                </div>
+                <p>
+                  <code>--quiet</code>는 스케줄러에서 요약 출력 없이 종료 코드만 확인할 때
+                  사용합니다.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>
+                <code>ains search</code>와 <code>ains show</code> · 검색과 상세 조회
+              </summary>
+              <div class="details-body">
+                <p>
+                  <code>search</code>는 SQLite FTS 전문 검색으로 제목·요약 등의 텍스트를 찾습니다.
+                  <code>show</code>는 결과 ID로 Story 상세를 조회합니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains search "mixture of experts" --days 30 --limit 10
+ains search "agents" --type "paper,article" --json
+ains show &lt;story-id&gt;
+ains show &lt;story-id&gt; --json</code></pre>
+                </div>
+                <p>
+                  <code>show --json</code>에는 raw 원본과 Sighting·metric history가 포함될 수
+                  있으므로 공유 전에 내용을 확인하십시오.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>ains learn</code>와 <code>ains history</code> · 학습 워크플로</summary>
+              <div class="details-body">
+                <p>
+                  최근 데이터에서 학습 후보를 찾고, 선택한 토픽의 맥락과 에이전트용 학습 지시문을
+                  생성하며, 완료한 학습을 기록합니다. <code>ains</code> 자체가 강의를 생성하거나
+                  LLM을 호출하지는 않습니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains learn candidates --limit 5 --days 7
+ains learn candidates --include-learned --no-refresh --json
+ains learn session "RAG" --level beginner --time 30
+ains learn record "RAG" --level beginner --time 30 --notes "기초 완료"
+ains history --limit 20 --json</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary>
+                <code>ains config</code>, <code>doctor</code>, <code>schedule</code> · 운영 명령
+              </summary>
+              <div class="details-body">
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains config path
+ains config show
+ains config init
+ains config edit
+
+ains doctor
+
+ains schedule install --every 60
+ains schedule status
+ains schedule uninstall</code></pre>
+                </div>
+                <p>
+                  <code>config init/edit</code>는 사용자 설정 파일을,
+                  <code>schedule install/uninstall</code>은 OS 스케줄을 변경합니다. 자동화에서
+                  실행하기 전에 변경 범위를 확인하십시오.
+                </p>
+              </div>
+            </details>
+          </section>
+
+          <section id="trends" aria-labelledby="trends-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">05 · RANKING V2</p>
+                <h2 id="trends-title">트렌드 랭킹</h2>
+              </div>
+              <p>
+                유형마다 “지금 볼 가치가 있는가”를 나타내는 신호가 다르므로 채널별 순위기를
+                사용합니다.
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>channel</th>
+                    <th>허용 sort</th>
+                    <th>특징</th>
+                    <th>점수</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>overview</code></td>
+                    <td><code>briefing</code></td>
+                    <td>네 섹션 균등 배치</td>
+                    <td>각 항목의 채널 점수</td>
+                  </tr>
+                  <tr>
+                    <td><code>community</code></td>
+                    <td><code>hot</code>, <code>latest</code></td>
+                    <td>참여 수준과 증가 속도</td>
+                    <td>latest는 없음</td>
+                  </tr>
+                  <tr>
+                    <td><code>official</code></td>
+                    <td><code>latest</code>, <code>important</code></td>
+                    <td>최신순 또는 영향도</td>
+                    <td>latest는 없음</td>
+                  </tr>
+                  <tr>
+                    <td><code>repos</code></td>
+                    <td><code>trending</code>, <code>discovery</code></td>
+                    <td>성장 본선과 신규 발견 분리</td>
+                    <td>discovery는 없음</td>
+                  </tr>
+                  <tr>
+                    <td><code>research</code></td>
+                    <td><code>hot</code>, <code>latest</code></td>
+                    <td>research_hot_v1 유지</td>
+                    <td>latest는 없음</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid-2">
+              <article class="card">
+                <h3>Repository Trending</h3>
+                <ul class="plain-list">
+                  <li>AI 관련, 비 fork·비 archived</li>
+                  <li>별 100개 이상, 최근 14일 내 push</li>
+                  <li>24시간·7일 기준점 모두 필요</li>
+                  <li>별 증가, 누적 규모와 push 신선도를 결합</li>
+                </ul>
+                <p>
+                  생성 14일 이내 저장소는 별 수와 무관하게 <code>discovery</code>에 표시할 수 있지만
+                  <code>trending</code> 본선 점수는 받지 않습니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>Community Hot</h3>
+                <ul class="plain-list">
+                  <li>소스 내부 백분위와 절대 로그 수준</li>
+                  <li>추천·댓글의 6시간·24시간 증가 신호</li>
+                  <li>48시간 반감기의 시간 감쇠</li>
+                  <li>상위 결과의 출처 다양성 목표</li>
+                </ul>
+                <p>
+                  현재 추천 점수가 <code>null</code>이면 HOT에서는 제외하지만 최신순에는 포함할 수
+                  있습니다. 누락 신호는 나머지 가중치를 재배분합니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>Official Updates</h3>
+                <ul class="plain-list">
+                  <li><code>latest</code>: 발행 시각 내림차순, 점수 없음</li>
+                  <li><code>important</code>: 영향도와 커뮤니티 echo</li>
+                  <li>critical: 보안, 폐기, 지원 종료, breaking</li>
+                  <li>high: 모델·API·SDK 출시, 가격·한도 변경</li>
+                </ul>
+                <p>고객 사례·행사·웨비나는 제품명이 있어도 먼저 낮은 영향 규칙을 적용합니다.</p>
+              </article>
+              <article class="card">
+                <h3>Research</h3>
+                <p>
+                  논문, 모델과 DEV.to 이외의 article은 별도 벤치마크 전까지 기존
+                  <code>research_hot_v1</code> 공식을 유지합니다. DEV.to article은 저장 타입을
+                  바꾸지 않고 Community 채널에서 다룹니다.
+                </p>
+                <p><code>latest</code>는 점수 없이 발행 시각 중심으로 볼 때 사용합니다.</p>
+              </article>
+            </div>
+
+            <div class="callout warning">
+              <strong>0.1.0은 v2 shadow 단계입니다.</strong>
+              <p>
+                옵션 없는 <code>ains trends</code>는 legacy를 사용합니다. v2 Repo Trending은 실제
+                관측으로 24시간·7일 기준점이 쌓이기 전까지 결과가 적거나 없을 수 있습니다. 과거 별
+                증가량을 임의로 만들어내지 않습니다.
+              </p>
+            </div>
+
+            <div class="code-block">
+              <span class="code-label">올바른 조합</span>
+              <pre><code>ains trends --ranking v2 --channel overview --sort briefing
+ains trends --ranking v2 --channel community --sort hot
+ains trends --ranking v2 --channel official --sort important
+ains trends --ranking v2 --channel repos --sort trending
+ains trends --ranking v2 --channel research --sort latest</code></pre>
+            </div>
+            <div class="code-block">
+              <span class="code-label">오류 예시</span>
+              <pre><code>ains trends --ranking v2 --channel repos --sort hot
+# 오류: Sort hot is incompatible with channel repos. (종료 코드 1)</code></pre>
+            </div>
+          </section>
+
+          <section id="mcp-setup" aria-labelledby="mcp-setup-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">06 · AGENT CONNECTION</p>
+                <h2 id="mcp-setup-title">MCP 연결</h2>
+              </div>
+              <p>
+                MCP는 에이전트가 외부 도구를 정해진 스키마로 호출하는 표준입니다. ains는 STDIO
+                방식을 사용합니다.
+              </p>
+            </div>
+
+            <div class="callout success">
+              <strong>HTTPS 주소가 없어도 정상입니다.</strong>
+              <p>
+                <code>ains-mcp</code>는 로컬 자식 프로세스로 실행되고 표준 입력과 출력으로 MCP
+                메시지를 교환합니다. 원격 Streamable HTTP 서버 URL은 필요하지 않습니다.
+              </p>
+            </div>
+
+            <h3>연결 전 확인</h3>
+            <div class="code-block">
+              <span class="code-label">shell</span>
+              <pre><code>ains --version
+ains doctor
+
+# Windows PowerShell
+Get-Command ains-mcp
+
+# macOS / Linux
+command -v ains-mcp</code></pre>
+            </div>
+            <p class="muted small">
+              터미널에서 <code>ains-mcp</code>만 직접 실행하면 메시지를 기다리며 멈춘 것처럼 보일 수
+              있습니다. 이는 대화형 CLI가 아니라 MCP 클라이언트가 연결해야 하는 서버이기 때문입니다.
+            </p>
+
+            <div class="tabset" data-tabset>
+              <div class="tab-list" role="tablist" aria-label="MCP 등록 환경">
+                <button class="tab-button" role="tab" aria-selected="true" data-tab="codex-project">
+                  Codex 프로젝트
+                </button>
+                <button class="tab-button" role="tab" aria-selected="false" data-tab="codex-global">
+                  Codex 전역
+                </button>
+                <button class="tab-button" role="tab" aria-selected="false" data-tab="claude-code">
+                  Claude Code
+                </button>
+                <button
+                  class="tab-button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tab="absolute-path"
+                >
+                  절대 경로
+                </button>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="codex-project">
+                <p>
+                  저장소의 <code>.codex/config.toml</code>에 등록하면 신뢰된 프로젝트에서만
+                  사용합니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">toml</span>
+                  <pre><code>[mcp_servers.ains]
+command = "ains-mcp"</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="codex-global" hidden>
+                <p>모든 Codex 프로젝트에서 보이게 하려면 사용자 전역에 등록합니다.</p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>codex mcp add ains -- ains-mcp
+codex mcp list</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="claude-code" hidden>
+                <p>Claude Code CLI에서 로컬 STDIO 서버를 등록합니다.</p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>claude mcp add ains -- ains-mcp</code></pre>
+                </div>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="absolute-path" hidden>
+                <p>PATH 연결이 어려우면 빌드 산출물을 Node.js로 직접 실행할 수 있습니다.</p>
+                <div class="code-block">
+                  <span class="code-label">toml</span>
+                  <pre><code>[mcp_servers.ains]
+command = "node"
+args = ["C:/absolute/path/AI-News-Supplier/dist/mcp/server.js"]</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <h3>등록 후 확인 순서</h3>
+            <ol class="plain-list">
+              <li>Codex 또는 Claude Code를 완전히 종료합니다.</li>
+              <li>다시 실행하고 새 작업을 엽니다.</li>
+              <li>MCP 목록에서 <code>ains</code> 또는 도구 9개를 확인합니다.</li>
+              <li>
+                “ains 수집 소스 상태를 확인해줘”라고 요청해 <code>get_source_status</code> 호출을
+                확인합니다.
+              </li>
+            </ol>
+
+            <div class="callout warning">
+              <strong>목록 표시와 실제 호출 가능 상태가 다를 수 있습니다.</strong>
+              <p>
+                일부 Codex 앱 버전에서는 프로젝트 범위 MCP가 <code>/mcp</code> 화면에 누락되어도
+                실제 도구가 호출되는 사례가 확인되었습니다. 표시만으로 판정하지 말고 읽기 전용
+                <code>get_source_status</code> 호출 결과도 확인하십시오.
+              </p>
+            </div>
+          </section>
+
+          <section id="mcp-tools" aria-labelledby="mcp-tools-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">07 · MCP REFERENCE</p>
+                <h2 id="mcp-tools-title">MCP 도구 9개</h2>
+              </div>
+              <p>CLI와 같은 코어를 사용하지만 JSON 스키마로 입력과 구조화된 결과를 주고받습니다.</p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>도구</th>
+                    <th>역할</th>
+                    <th>주요 입력</th>
+                    <th>동작</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>get_trends</code></td>
+                    <td>트렌드 조회</td>
+                    <td>limit, sources, types, since_hours, ranking_version, channel, sort</td>
+                    <td><span class="pill network">자동 갱신</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>search_news</code></td>
+                    <td>FTS 전문 검색</td>
+                    <td>query, limit, since_days, types</td>
+                    <td><span class="pill network">자동 갱신</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>get_item</code></td>
+                    <td>Story 상세</td>
+                    <td>id</td>
+                    <td><span class="pill read">읽기</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>refresh_sources</code></td>
+                    <td>수동 수집</td>
+                    <td>sources, force</td>
+                    <td>
+                      <span class="pill write">DB 변경</span
+                      ><span class="pill network">네트워크</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><code>get_source_status</code></td>
+                    <td>소스 상태</td>
+                    <td>없음</td>
+                    <td><span class="pill read">읽기</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>get_learning_candidates</code></td>
+                    <td>학습 후보</td>
+                    <td>limit, since_days, include_learned</td>
+                    <td><span class="pill network">자동 갱신</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>design_learning_session</code></td>
+                    <td>학습 지시문·근거</td>
+                    <td>topic, level, time_budget_minutes</td>
+                    <td><span class="pill read">읽기</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>record_learning</code></td>
+                    <td>학습 이력 기록</td>
+                    <td>topic, level, time_spent_min, notes, item_ids</td>
+                    <td><span class="pill write">DB 변경</span></td>
+                  </tr>
+                  <tr>
+                    <td><code>get_learning_history</code></td>
+                    <td>학습 이력 조회</td>
+                    <td>limit</td>
+                    <td><span class="pill read">읽기</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <details open>
+              <summary><code>get_trends</code> · 최신 AI 트렌드</summary>
+              <div class="details-body">
+                <p>
+                  최신 트렌드를 필터링해 반환합니다. 최대 <code>limit=100</code>이며, v2에서는
+                  <code>sections[]</code>와 같은 순서로 평탄화한 <code>items[]</code>를 함께
+                  제공합니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>{
+  "ranking_version": "v2",
+  "channel": "repos",
+  "sort": "trending",
+  "since_hours": 168,
+  "limit": 10
+}</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>search_news</code> · 전문 검색</summary>
+              <div class="details-body">
+                <p>최근 데이터를 갱신한 후 축적된 Story를 FTS로 검색합니다.</p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>{
+  "query": "mixture of experts",
+  "since_days": 30,
+  "types": ["paper", "article"],
+  "limit": 20
+}</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>get_item</code> · Story, Sighting과 지표 이력</summary>
+              <div class="details-body">
+                <p>
+                  Story ID로 원본 raw, 기존 score history, 전체 <code>sightings[]</code>와
+                  Sighting별 <code>metric_history</code>를 조회합니다. 항목이 없으면
+                  <code>found: false</code>입니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>{ "id": "&lt;story-id&gt;" }</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary>
+                <code>refresh_sources</code>와 <code>get_source_status</code> · 수집 운영
+              </summary>
+              <div class="details-body">
+                <p>
+                  <code>refresh_sources</code>는 특정 또는 전체 소스를 수집하고,
+                  <code>get_source_status</code>는 활성 여부, TTL, 마지막 성공, 연속 실패와 항목
+                  수를 반환합니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>// refresh_sources
+{ "sources": ["hackernews", "github"], "force": true }
+
+// get_source_status
+{}</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>get_learning_candidates</code> · 학습 후보 발굴</summary>
+              <div class="details-body">
+                <p>
+                  여러 소스 등장, 최근 상승과 신규성으로 학습 후보를 찾고 공식·논문·레포·토론 근거를
+                  버킷별로 제공합니다. 기본은 최근 7일, 5개이며 이미 학습한 토픽은 제외합니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>{
+  "limit": 5,
+  "since_days": 7,
+  "include_learned": false
+}</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>design_learning_session</code> · 학습 세션 설계 자료</summary>
+              <div class="details-body">
+                <p>
+                  토픽과 수준·시간에 맞는 에이전트 지시문과 근거 컨텍스트를 반환합니다. 수준은
+                  <code>beginner</code>, <code>intermediate</code>, <code>advanced</code> 중
+                  하나입니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>{
+  "topic": "retrieval augmented generation",
+  "level": "beginner",
+  "time_budget_minutes": 30
+}</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary>
+                <code>record_learning</code>와 <code>get_learning_history</code> · 학습 이력
+              </summary>
+              <div class="details-body">
+                <p>
+                  완료한 토픽을 기록하면 이후 후보 추천에서 중복을 줄일 수 있습니다. Story ID를
+                  <code>item_ids</code>로 함께 남길 수 있습니다.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">arguments</span>
+                  <pre><code>// record_learning
+{
+  "topic": "RAG",
+  "level": "beginner",
+  "time_spent_min": 30,
+  "notes": "검색과 생성 연결 구조 학습",
+  "item_ids": ["&lt;story-id&gt;"]
+}
+
+// get_learning_history
+{ "limit": 20 }</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <h3>제공 프롬프트</h3>
+            <div class="grid-3">
+              <div class="card">
+                <h4><code>trend-briefing</code></h4>
+                <p>최신 트렌드로 핵심 3가지와 카테고리별 브리핑을 작성하도록 안내합니다.</p>
+              </div>
+              <div class="card">
+                <h4><code>learn-today</code></h4>
+                <p>학습 후보를 고르고 세션을 진행한 뒤 이력을 기록하도록 안내합니다.</p>
+              </div>
+              <div class="card">
+                <h4><code>deep-dive</code></h4>
+                <p>사용자가 지정한 토픽으로 바로 학습 세션을 시작하도록 안내합니다.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="workflows" aria-labelledby="workflows-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">08 · RECIPES</p>
+                <h2 id="workflows-title">작업 예시 10가지</h2>
+              </div>
+              <p>에이전트가 MCP를 인식하면 자연어 요청을 적절한 도구 호출로 연결할 수 있습니다.</p>
+            </div>
+
+            <div class="callout">
+              <strong>자동 호출은 에이전트 환경에 따라 달라집니다.</strong>
+              <p>
+                MCP가 활성화되어 있고 도구 사용이 허용되어야 합니다. 상태 변경이나 네트워크 접근은
+                에이전트의 승인 정책에 따라 사용자 확인을 요구할 수 있습니다.
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>자연어 요청</th>
+                    <th>MCP 도구 흐름</th>
+                    <th>CLI 대응</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>“오늘 AI 업계 핵심 소식을 유형별로 정리해줘.”</td>
+                    <td><code>get_trends</code> overview/briefing</td>
+                    <td>
+                      <code>ains trends --ranking v2 --channel overview --sort briefing</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>“최근 중요한 공식 모델·API 업데이트만 알려줘.”</td>
+                    <td><code>get_trends</code> official/important</td>
+                    <td>
+                      <code>ains trends --ranking v2 --channel official --sort important</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>“최근 성장세가 강한 AI GitHub 저장소를 비교해줘.”</td>
+                    <td><code>get_trends</code> repos/trending</td>
+                    <td><code>ains trends --ranking v2 --channel repos --sort trending</code></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>“막 공개된 신생 AI 저장소를 찾아줘.”</td>
+                    <td><code>get_trends</code> repos/discovery</td>
+                    <td><code>ains trends --ranking v2 --channel repos --sort discovery</code></td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>“지난 48시간 커뮤니티에서 반응이 빠른 주제를 요약해줘.”</td>
+                    <td><code>get_trends</code> community/hot</td>
+                    <td>
+                      <code
+                        >ains trends --ranking v2 --channel community --sort hot --hours 48</code
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td>“최근 한 달간 agent memory 관련 자료를 찾아 관점별로 묶어줘.”</td>
+                    <td><code>search_news</code> → 필요 시 <code>get_item</code></td>
+                    <td><code>ains search "agent memory" --days 30</code></td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td>“이 Story가 어느 출처에서 발견됐고 점수가 어떻게 변했는지 보여줘.”</td>
+                    <td><code>get_item</code></td>
+                    <td><code>ains show &lt;story-id&gt; --json</code></td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td>“오늘 30분 동안 배울 만한 AI 주제 세 개를 추천해줘.”</td>
+                    <td><code>get_learning_candidates</code></td>
+                    <td><code>ains learn candidates --limit 3</code></td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td>“RAG 입문 학습을 30분 과정으로 진행해줘.”</td>
+                    <td><code>design_learning_session</code> → <code>record_learning</code></td>
+                    <td><code>ains learn session "RAG" --level beginner --time 30</code></td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td>“수집 상태를 점검하고 실패한 소스만 다시 확인해줘.”</td>
+                    <td><code>get_source_status</code> → 승인 후 <code>refresh_sources</code></td>
+                    <td>
+                      <code>ains doctor</code> → <code>ains fetch --source "..." --force</code>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>완전한 에이전트 작업 흐름 예시</h3>
+            <div class="tabset" data-tabset>
+              <div class="tab-list" role="tablist" aria-label="작업 흐름 예시">
+                <button class="tab-button" role="tab" aria-selected="true" data-tab="briefing-flow">
+                  일일 브리핑
+                </button>
+                <button
+                  class="tab-button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tab="research-flow"
+                >
+                  주제 조사
+                </button>
+                <button
+                  class="tab-button"
+                  role="tab"
+                  aria-selected="false"
+                  data-tab="learning-flow"
+                >
+                  학습 세션
+                </button>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="briefing-flow">
+                <ol>
+                  <li>에이전트가 <code>get_trends</code>의 overview/briefing을 호출합니다.</li>
+                  <li>공식·레포·커뮤니티·연구 섹션을 같은 개수로 훑습니다.</li>
+                  <li><code>ranking.explanation</code>과 출처 URL로 선정 이유를 설명합니다.</li>
+                  <li>
+                    더 볼 항목이 있으면 사용자 동의 후 <code>get_item</code>으로 상세를 조회합니다.
+                  </li>
+                </ol>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="research-flow" hidden>
+                <ol>
+                  <li>에이전트가 <code>search_news</code>로 최근 30일 자료를 찾습니다.</li>
+                  <li>공식·논문·레포·토론으로 자료를 분류합니다.</li>
+                  <li>
+                    핵심 Story는 <code>get_item</code>으로 여러 Sighting과 지표 근거를 확인합니다.
+                  </li>
+                  <li>출처 링크와 확인된 사실, 에이전트의 해석을 구분해 보고합니다.</li>
+                </ol>
+              </div>
+              <div class="tab-panel" role="tabpanel" data-panel="learning-flow" hidden>
+                <ol>
+                  <li>
+                    <code>get_learning_candidates</code>로 상위 후보와 추천 이유를 제시합니다.
+                  </li>
+                  <li>사용자가 토픽을 고르면 <code>design_learning_session</code>을 호출합니다.</li>
+                  <li>반환된 지시문과 컨텍스트로 개념·실습·확인문제를 진행합니다.</li>
+                  <li>
+                    학습 완료 후 사용자 확인을 받고 <code>record_learning</code>으로 기록합니다.
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section id="output" aria-labelledby="output-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">09 · READ THE RESULT</p>
+                <h2 id="output-title">결과 해석</h2>
+              </div>
+              <p>
+                점수만 보지 말고 coverage, signals와 explanation을 함께 확인해야 순위의 근거가
+                보입니다.
+              </p>
+            </div>
+
+            <div class="code-block">
+              <span class="code-label">축약된 결과 예시</span>
+              <pre><code>{
+  "id": "&lt;story-id&gt;",
+  "source": "github",
+  "type": "hot_repo",
+  "title": "Example AI repository",
+  "score_kind": "stars",
+  "comments_count": null,
+  "discussion_url": null,
+  "activity_at": "2026-07-10T01:00:00.000Z",
+  "ranking": {
+    "version": "v2",
+    "channel": "repos",
+    "sort": "trending",
+    "kind": "repo_trending_v2",
+    "position": 1,
+    "score": 0.73,
+    "coverage": "full",
+    "signals": { "star_delta_24h": 420, "star_delta_7d": 1800 },
+    "explanation": "24시간·7일 성장과 누적 규모, 최근 push를 반영"
+  },
+  "hotness": 0.73
+}</code></pre>
+            </div>
+            <p class="muted small">
+              위 값과 제목은 구조 설명을 위한 예시이며 실제 수집 결과가 아닙니다.
+            </p>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>필드</th>
+                    <th>의미</th>
+                    <th>해석할 때 주의할 점</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>ranking.version</code></td>
+                    <td>legacy 또는 v2</td>
+                    <td>서로 다른 버전의 점수를 직접 비교하지 않습니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>channel</code> / <code>sort</code></td>
+                    <td>유형과 보기 방식</td>
+                    <td>채널별로 점수의 의미가 다릅니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>kind</code></td>
+                    <td>실제 랭킹 공식 식별자</td>
+                    <td>같은 kind 안에서 비교하는 것이 안전합니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>position</code></td>
+                    <td>현재 결과 안의 순서</td>
+                    <td>필터·시간·limit이 달라지면 바뀝니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>score</code></td>
+                    <td>해당 랭커의 점수</td>
+                    <td>latest·discovery는 <code>null</code>일 수 있습니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>coverage</code></td>
+                    <td>필요 기준점 확보 정도</td>
+                    <td>full이 아니면 성장률 신뢰도가 낮을 수 있습니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>signals</code></td>
+                    <td>별·추천·댓글·시간 등 계산 근거</td>
+                    <td>원값과 정규화 신호를 함께 확인합니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>explanation</code></td>
+                    <td>사람이 읽는 선정 이유</td>
+                    <td>에이전트 요약에서 근거 문장으로 활용합니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>hotness</code></td>
+                    <td>이전 호환 별칭</td>
+                    <td>폐기 예정이며 1.0까지 유지됩니다.</td>
+                  </tr>
+                  <tr>
+                    <td><code>score_kind</code></td>
+                    <td>원천 점수 단위</td>
+                    <td>points, upvotes, reactions, stars, likes 등입니다.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="sources" aria-labelledby="sources-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">10 · SOURCES</p>
+                <h2 id="sources-title">데이터 소스</h2>
+              </div>
+              <p>공식 API·RSS·Atom이 확인된 소스만 사용하며 HTML 페이지를 스크래핑하지 않습니다.</p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>소스</th>
+                    <th>유형·채널</th>
+                    <th>점수 단위</th>
+                    <th>인증</th>
+                    <th>비고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Hacker News</td>
+                    <td>community</td>
+                    <td>points, comments</td>
+                    <td>불필요</td>
+                    <td>원문과 HN 토론 URL 보존</td>
+                  </tr>
+                  <tr>
+                    <td>Reddit</td>
+                    <td>community</td>
+                    <td>upvotes, comments</td>
+                    <td>필수</td>
+                    <td>서브레딧별 hot 25개, 최대 48시간 보존</td>
+                  </tr>
+                  <tr>
+                    <td>DEV.to</td>
+                    <td>Community의 article</td>
+                    <td>reactions, comments</td>
+                    <td>불필요</td>
+                    <td>기본 AI 태그 사용</td>
+                  </tr>
+                  <tr>
+                    <td>GitHub</td>
+                    <td>repos</td>
+                    <td>stars</td>
+                    <td>선택</td>
+                    <td>Search·Repository API, pushed_at 사용</td>
+                  </tr>
+                  <tr>
+                    <td>OpenAI News</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>RSS</td>
+                  </tr>
+                  <tr>
+                    <td>Google DeepMind</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>RSS</td>
+                  </tr>
+                  <tr>
+                    <td>Google AI Blog</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>RSS</td>
+                  </tr>
+                  <tr>
+                    <td>Hugging Face Blog</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>RSS</td>
+                  </tr>
+                  <tr>
+                    <td>Claude Code</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>공식 Atom feed</td>
+                  </tr>
+                  <tr>
+                    <td>Cursor</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>공식 changelog RSS</td>
+                  </tr>
+                  <tr>
+                    <td>Figma Release Notes</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>Atom에서 AI 키워드 항목만</td>
+                  </tr>
+                  <tr>
+                    <td>Gemini CLI Releases</td>
+                    <td>official</td>
+                    <td>없음</td>
+                    <td>선택</td>
+                    <td>draft·prerelease 제외</td>
+                  </tr>
+                  <tr>
+                    <td>Hugging Face 모델</td>
+                    <td>research</td>
+                    <td>likes</td>
+                    <td>불필요</td>
+                    <td>모델 데이터</td>
+                  </tr>
+                  <tr>
+                    <td>arXiv</td>
+                    <td>research</td>
+                    <td>없음</td>
+                    <td>불필요</td>
+                    <td>기본 cs.AI, cs.CL, cs.LG</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid-2">
+              <div class="callout success">
+                <strong>지원 원칙</strong>
+                <p>
+                  공개 API와 RSS/Atom, GitHub 공식 REST API를 사용하고 소스별 오류를 격리합니다.
+                </p>
+              </div>
+              <div class="callout danger">
+                <strong>수집하지 않음</strong>
+                <p>
+                  GitHub Trending HTML, Anthropic 뉴스룸 HTML, Figma 일반 HTML과 비공개 피드는
+                  수집하지 않습니다.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="configuration" aria-labelledby="configuration-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">11 · CONFIGURATION</p>
+                <h2 id="configuration-title">설정과 인증</h2>
+              </div>
+              <p>
+                기본값으로 대부분의 기능을 사용할 수 있고 GitHub·Reddit 한도를 넓힐 때만 인증을
+                추가합니다.
+              </p>
+            </div>
+
+            <div class="grid-3">
+              <article class="card">
+                <h3>설정 파일</h3>
+                <p><code>~/.ai-news-supplier/config.json</code></p>
+                <p><code>ains config path</code>로 실제 위치를 확인합니다.</p>
+              </article>
+              <article class="card">
+                <h3>데이터 경로</h3>
+                <p><code>~/.ai-news-supplier/</code></p>
+                <p><code>AINS_HOME</code>으로 설정·DB 디렉터리를 함께 바꿀 수 있습니다.</p>
+              </article>
+              <article class="card">
+                <h3>우선순위</h3>
+                <p>환경변수 토큰이 설정 파일보다 우선합니다.</p>
+                <p>잘못된 설정은 경고 후 기본값으로 폴백합니다.</p>
+              </article>
+            </div>
+
+            <h3>안전한 기본 설정 예시</h3>
+            <div class="code-block">
+              <span class="code-label">config.json</span>
+              <pre><code>{
+  "retentionDays": 90,
+  "defaultTtlMinutes": 60,
+  "maxPerSourceRatio": 0.4,
+  "extraKeywords": ["agent memory"],
+  "sources": {
+    "hackernews": { "enabled": true, "minPoints": 10 },
+    "github": { "enabled": true },
+    "reddit": { "enabled": false },
+    "arxiv": { "categories": ["cs.AI", "cs.CL", "cs.LG"] }
+  },
+  "learning": {
+    "defaultLevel": "intermediate",
+    "relearnAfterDays": 90
+  }
+}</code></pre>
+            </div>
+
+            <h3>인증 환경변수</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>환경변수</th>
+                    <th>용도</th>
+                    <th>필수 여부</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>GITHUB_TOKEN</code></td>
+                    <td>GitHub Search·Repository·Gemini Releases API 한도</td>
+                    <td>선택</td>
+                  </tr>
+                  <tr>
+                    <td><code>AINS_REDDIT_CLIENT_ID</code></td>
+                    <td>Reddit OAuth client ID</td>
+                    <td rowspan="3">Reddit 사용 시 세 값 모두 필수</td>
+                  </tr>
+                  <tr>
+                    <td><code>AINS_REDDIT_CLIENT_SECRET</code></td>
+                    <td>Reddit OAuth client secret</td>
+                  </tr>
+                  <tr>
+                    <td><code>AINS_REDDIT_USERNAME</code></td>
+                    <td>식별 User-Agent의 Reddit username</td>
+                  </tr>
+                  <tr>
+                    <td><code>AINS_HOME</code></td>
+                    <td>사용자 데이터·설정 디렉터리 변경</td>
+                    <td>선택</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="callout danger">
+              <strong>비밀정보를 저장소에 커밋하지 마십시오.</strong>
+              <p>
+                환경변수나 사용자 홈 설정만 사용하십시오. 토큰, client secret, 세션 쿠키, 실제
+                사용자 데이터와 DB 파일을 이슈·로그·fixture에 붙이지 마십시오.
+              </p>
+            </div>
+
+            <h3>사용자 정의 RSS</h3>
+            <p>
+              <code>sources.rss.feeds</code>를 설정하면 기본 목록에 추가되는 것이 아니라 기본 피드
+              전체를 대체합니다. 기본 피드와 사용자 피드를 함께 쓰려면 원하는 기본 항목도 배열에
+              모두 포함해야 합니다. 각 피드에는 고유 <code>id</code>, 표시용 <code>title</code>,
+              공개 <code>url</code>이 필요합니다.
+            </p>
+          </section>
+
+          <section id="data-policy" aria-labelledby="data-policy-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">12 · LOCAL DATA</p>
+                <h2 id="data-policy-title">데이터와 보안</h2>
+              </div>
+              <p>
+                수집 데이터와 학습 이력은 사용자 컴퓨터에 저장되며 보존 정책에 따라 자동 정리됩니다.
+              </p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>데이터</th>
+                    <th>위치·기간</th>
+                    <th>정책</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>SQLite DB</td>
+                    <td><code>~/.ai-news-supplier/data.db</code></td>
+                    <td>로컬 저장</td>
+                  </tr>
+                  <tr>
+                    <td>일반 Story</td>
+                    <td>기본 90일</td>
+                    <td><code>retentionDays</code>, null이면 영구</td>
+                  </tr>
+                  <tr>
+                    <td>일반 metric snapshot</td>
+                    <td>14일</td>
+                    <td>1시간 UTC 버킷</td>
+                  </tr>
+                  <tr>
+                    <td>Reddit Sighting·본문·작성자·snapshot</td>
+                    <td>최대 48시간</td>
+                    <td>삭제·removed는 재검증 후 즉시 제거</td>
+                  </tr>
+                  <tr>
+                    <td>학습 이력</td>
+                    <td>사용자 DB</td>
+                    <td>후보 중복 방지와 history 조회</td>
+                  </tr>
+                  <tr>
+                    <td>v1→v2 백업</td>
+                    <td><code>data.pre-v2.&lt;UTC&gt;.bak</code></td>
+                    <td>마이그레이션 전 VACUUM INTO</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>DB 마이그레이션과 복구</h3>
+            <p>
+              파일 DB를 v2로 처음 열면 같은 디렉터리에 사전 백업을 만들고 무결성·rowid·FTS·학습
+              이력과 기존 점수 이력을 검증합니다. 백업이나 검증이 실패하면 마이그레이션을 시작하지
+              않습니다.
+            </p>
+            <ol class="plain-list">
+              <li>실행 중인 <code>ains</code>, MCP 서버와 스케줄 작업을 모두 종료합니다.</li>
+              <li>현재 <code>data.db</code>를 삭제하지 말고 별도 이름으로 보존합니다.</li>
+              <li>
+                선택한 <code>data.pre-v2.&lt;UTC&gt;.bak</code> 복사본을 <code>data.db</code>로
+                둡니다.
+              </li>
+              <li>호환 버전으로 실행한 뒤 <code>ains doctor</code>로 무결성을 확인합니다.</li>
+            </ol>
+          </section>
+
+          <section id="cautions" aria-labelledby="cautions-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">13 · READ BEFORE USE</p>
+                <h2 id="cautions-title">주의사항과 한계</h2>
+              </div>
+              <p>
+                자동 브리핑과 학습에 사용하기 전에 현재 버전의 데이터·랭킹·운영 경계를 확인하십시오.
+              </p>
+            </div>
+
+            <div class="grid-2">
+              <article class="card">
+                <h3>v2 기준점은 시간이 필요합니다</h3>
+                <p>
+                  Repo Trending은 실제 24시간·7일 snapshot을 요구합니다. 설치 직후에는 Discovery와
+                  다른 채널을 먼저 활용하십시오.
+                </p>
+              </article>
+              <article class="card">
+                <h3>최신이 곧 중요함은 아닙니다</h3>
+                <p>
+                  Official <code>latest</code>는 점수 없는 시간순입니다. 영향이 큰 변경은
+                  <code>important</code>로 별도 조회하십시오.
+                </p>
+              </article>
+              <article class="card">
+                <h3>외부 API 상태에 영향을 받습니다</h3>
+                <p>
+                  rate limit, 응답 형식 변경과 피드 장애로 일부 소스가 실패할 수 있습니다. 다른 소스
+                  결과는 유지되며 status와 doctor로 확인할 수 있습니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>자동 Story 병합은 제한적입니다</h3>
+                <p>
+                  같은 정규 URL은 묶지만 리디렉션 추적이나 제목 유사도만으로 자동 병합하지 않습니다.
+                  오병합을 피하기 위한 선택입니다.
+                </p>
+              </article>
+              <article class="card">
+                <h3>LLM 결과는 ains 결과가 아닙니다</h3>
+                <p>
+                  에이전트의 번역·요약·추론에는 오류가 있을 수 있습니다. 중요한 판단은 원문 URL과
+                  <code>ranking.signals</code>로 검증하십시오.
+                </p>
+              </article>
+              <article class="card">
+                <h3>상태 변경 도구를 구분하십시오</h3>
+                <p>
+                  수집, 학습 기록, 설정 초기화와 스케줄 설치·해제는 로컬 상태를 바꿉니다. 자동 실행
+                  정책과 사용자 승인을 명확히 하십시오.
+                </p>
+              </article>
+            </div>
+
+            <div class="callout warning">
+              <strong>v2 전환 승인 전입니다.</strong>
+              <p>
+                실제 24시간 기준점 95%, 7일 기준점 90%, 상위 결과 coverage와 AI 관련 정밀도 등 승인
+                게이트를 통과하기 전에는 v2를 기본값으로 간주하지 마십시오. AI NEWS HUB와 정확히
+                같은 순위는 승인 기준이 아닙니다.
+              </p>
+            </div>
+          </section>
+
+          <section id="troubleshooting" aria-labelledby="troubleshooting-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">14 · TROUBLESHOOTING</p>
+                <h2 id="troubleshooting-title">문제 해결</h2>
+              </div>
+              <p>
+                증상부터 확인하고 사용자 데이터나 토큰을 공유하지 않은 상태에서 재현 정보를
+                수집하십시오.
+              </p>
+            </div>
+
+            <details open>
+              <summary><code>ains</code> 또는 <code>ains-mcp</code> 명령을 찾지 못합니다</summary>
+              <div class="details-body">
+                <ol>
+                  <li>
+                    저장소에서 <code>npm install</code>과 <code>npm run build</code>가 성공했는지
+                    확인합니다.
+                  </li>
+                  <li><code>npm link</code>를 다시 실행합니다.</li>
+                  <li>새 터미널을 열고 PATH를 다시 읽습니다.</li>
+                  <li>
+                    Windows는 <code>Get-Command ains</code>, macOS/Linux는
+                    <code>command -v ains</code>로 확인합니다.
+                  </li>
+                  <li>
+                    계속 실패하면 MCP 설정에 Node.js와 <code>dist/mcp/server.js</code> 절대 경로를
+                    사용합니다.
+                  </li>
+                </ol>
+              </div>
+            </details>
+
+            <details>
+              <summary>MCP가 <code>/mcp</code> 목록에 나타나지 않습니다</summary>
+              <div class="details-body">
+                <ol>
+                  <li>
+                    <code>.codex/config.toml</code>의 이름과 <code>command = "ains-mcp"</code>를
+                    확인합니다.
+                  </li>
+                  <li>프로젝트가 Codex에서 신뢰된 상태인지 확인합니다.</li>
+                  <li>앱을 완전히 종료·재실행하고 새 작업을 엽니다.</li>
+                  <li>
+                    “ains 소스 상태를 확인해줘”로 <code>get_source_status</code> 실제 호출을
+                    시험합니다.
+                  </li>
+                  <li>
+                    표시가 꼭 필요하면 <code>codex mcp add ains -- ains-mcp</code>로 사용자 전역
+                    등록을 검토합니다.
+                  </li>
+                </ol>
+                <p>
+                  현재 확인된 Codex 앱 사례에서는 프로젝트 범위 서버가 목록에 누락되어도 도구 9개가
+                  실제로 호출되었습니다. 전역 등록은 모든 프로젝트에 영향을 줍니다.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary><code>ains-mcp</code>를 실행했는데 아무 출력 없이 멈춥니다</summary>
+              <div class="details-body">
+                <p>
+                  정상일 수 있습니다. STDIO MCP 서버는 사람이 입력하는 셸 명령이 아니라 MCP
+                  클라이언트의 프로토콜 메시지를 기다립니다. 종료하려면
+                  <kbd>Ctrl</kbd>+<kbd>C</kbd>를 누르고 Codex나 Claude Code 설정을 통해
+                  실행하십시오.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>Repo Trending 결과가 없거나 적습니다</summary>
+              <div class="details-body">
+                <p>
+                  24시간·7일 기준점, 별 100개, 최근 14일 push 등의 본선 조건을 확인하십시오. 설치
+                  직후에는
+                  <code>repos/discovery</code>를 사용하고 스케줄 수집으로 실제 snapshot을
+                  축적하십시오.
+                </p>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains schedule install --every 60
+ains trends --ranking v2 --channel repos --sort discovery
+ains doctor</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary>Reddit이 disabled로 표시됩니다</summary>
+              <div class="details-body">
+                <p>
+                  client ID, client secret과 username 세 값이 모두 있어야 활성화됩니다. 환경변수나
+                  사용자 설정에만 저장하고 앱·에이전트를 다시 시작해 환경을 다시 읽으십시오.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>특정 수집 소스만 실패합니다</summary>
+              <div class="details-body">
+                <ol>
+                  <li><code>ains doctor</code>에서 마지막 성공과 연속 실패를 확인합니다.</li>
+                  <li>잠시 뒤 해당 소스만 <code>--force</code>로 다시 수집합니다.</li>
+                  <li>GitHub rate limit이라면 <code>GITHUB_TOKEN</code> 설정을 검토합니다.</li>
+                  <li>
+                    반복되면 오류 메시지, Node.js 버전과 재현 명령을 이슈에 남깁니다. 토큰은
+                    제거합니다.
+                  </li>
+                </ol>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code>ains doctor
+ains fetch --source "github" --force</code></pre>
+                </div>
+              </div>
+            </details>
+
+            <details>
+              <summary>channel과 sort 조합 오류가 발생합니다</summary>
+              <div class="details-body">
+                <p>
+                  자동 보정하지 않고 종료 코드 1 또는 MCP InvalidParams로 거부합니다. 이 설명서의
+                  허용 조합 표를 확인하십시오. legacy는 overview/briefing만 허용합니다.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>설정 파일을 수정한 뒤 기본값으로 돌아갑니다</summary>
+              <div class="details-body">
+                <p>
+                  JSON 문법 또는 값 검증 실패 시 경고 후 전체 기본값으로 폴백합니다.
+                  <code>ains config show</code>로 현재 유효 설정을 확인하고 따옴표·쉼표와 양수
+                  범위를 점검하십시오.
+                </p>
+              </div>
+            </details>
+
+            <details>
+              <summary>DB 마이그레이션 또는 무결성 오류가 발생합니다</summary>
+              <div class="details-body">
+                <p>
+                  현재 DB를 덮어쓰거나 삭제하지 마십시오. MCP와 스케줄러를 종료하고 백업 파일을 별도
+                  보존한 뒤 <code>ains doctor</code> 결과와 오류를 확인하십시오. 복구 절차는
+                  “데이터와 보안” 장을 따릅니다.
+                </p>
+              </div>
+            </details>
+          </section>
+
+          <section id="cheatsheet" aria-labelledby="cheatsheet-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">15 · ONE-PAGE REFERENCE</p>
+                <h2 id="cheatsheet-title">치트시트</h2>
+              </div>
+              <p>자주 쓰는 명령과 점검 순서를 복사해 바로 사용할 수 있습니다.</p>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <h3>매일 쓰는 조회</h3>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code># 전체 브리핑
+ains trends --ranking v2 --channel overview --sort briefing
+
+# 커뮤니티 HOT
+ains trends --ranking v2 --channel community --sort hot --hours 48
+
+# 중요 공식 업데이트
+ains trends --ranking v2 --channel official --sort important
+
+# 성장 저장소와 신규 저장소
+ains trends --ranking v2 --channel repos --sort trending
+ains trends --ranking v2 --channel repos --sort discovery
+
+# 검색
+ains search "topic" --days 30 --limit 20</code></pre>
+                </div>
+              </div>
+              <div>
+                <h3>운영과 진단</h3>
+                <div class="code-block">
+                  <span class="code-label">shell</span>
+                  <pre><code># 상태
+ains doctor
+ains config show
+ains schedule status
+
+# 수집
+ains fetch
+ains fetch --source "hackernews,github" --force
+
+# 정기 수집
+ains schedule install --every 60
+
+# 학습
+ains learn candidates --limit 5
+ains history</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <h3>MCP 자연어 요청 템플릿</h3>
+            <div class="code-block">
+              <span class="code-label">prompt</span>
+              <pre><code>ains 도구를 사용해서 최근 48시간 AI 동향을 조사해줘.
+
+1. Overview에서 전체 흐름을 확인해줘.
+2. 중요한 공식 업데이트와 성장 중인 저장소를 따로 정리해줘.
+3. 각 항목의 ranking.explanation과 출처 URL을 포함해줘.
+4. 점수가 없는 latest/discovery와 점수가 있는 결과를 구분해줘.
+5. 확인된 데이터와 너의 해석을 구분해서 한국어로 보고해줘.</code></pre>
+            </div>
+
+            <div class="callout success">
+              <strong>처음 문제가 생기면 이 세 가지부터 확인하십시오.</strong>
+              <p>
+                <code>ains --version</code> → <code>ains doctor</code> →
+                <code>ains config show</code>
+              </p>
+            </div>
+          </section>
+
+          <footer class="footer">
+            <p>
+              ai-news-supplier 사용자 설명서 · 문서 기준 v0.1.0 · 최종 갱신 2026-07-10 · MIT License
+            </p>
+            <p>
+              이 문서는 외부 폰트·CDN·분석 스크립트를 사용하지 않으며 로컬에서 단독으로 열 수
+              있습니다. 구현 계약은
+              <a href="requirements-contract.md">requirements-contract.md</a>를 기준으로 합니다.
+            </p>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const root = document.documentElement;
+        const body = document.body;
+        const themeButton = document.querySelector('#theme-button');
+        const menuButton = document.querySelector('#menu-button');
+        const backdrop = document.querySelector('#backdrop');
+        const sidebarLinks = [...document.querySelectorAll('.sidebar nav a')];
+        const sections = [...document.querySelectorAll('main section[id]')];
+        const searchInput = document.querySelector('#doc-search');
+        const searchResults = document.querySelector('#search-results');
+
+        let storedTheme = null;
+        try {
+          storedTheme = localStorage.getItem('ains-doc-theme');
+        } catch {
+          // file:// 환경에서 저장소 접근이 차단되어도 문서는 계속 동작합니다.
+        }
+        const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = storedTheme || (preferredDark ? 'dark' : 'light');
+
+        function setTheme(theme) {
+          root.dataset.theme = theme;
+          try {
+            localStorage.setItem('ains-doc-theme', theme);
+          } catch {
+            // 테마 저장이 불가능한 환경에서는 현재 페이지에만 적용합니다.
+          }
+          themeButton.textContent = theme === 'dark' ? '밝은 화면' : '어두운 화면';
+          themeButton.setAttribute(
+            'aria-label',
+            theme === 'dark' ? '밝은 색상 테마로 전환' : '어두운 색상 테마로 전환',
+          );
+        }
+
+        setTheme(initialTheme);
+        themeButton.addEventListener('click', () => {
+          setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+        });
+
+        function setNav(open) {
+          body.classList.toggle('nav-open', open);
+          menuButton.setAttribute('aria-expanded', String(open));
+          menuButton.setAttribute('aria-label', open ? '목차 닫기' : '목차 열기');
+        }
+
+        menuButton.addEventListener('click', () => setNav(!body.classList.contains('nav-open')));
+        backdrop.addEventListener('click', () => setNav(false));
+        sidebarLinks.forEach((link) => link.addEventListener('click', () => setNav(false)));
+
+        document.addEventListener('keydown', (event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            searchInput.focus();
+          }
+          if (event.key === 'Escape') {
+            setNav(false);
+            searchResults.hidden = true;
+            searchInput.setAttribute('aria-expanded', 'false');
+          }
+        });
+
+        document.querySelectorAll('.code-block').forEach((block) => {
+          const code = block.querySelector('code');
+          if (!code) return;
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'copy-button';
+          button.textContent = '복사';
+          button.setAttribute('aria-label', '코드 복사');
+          button.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(code.textContent);
+              button.textContent = '복사됨';
+              window.setTimeout(() => (button.textContent = '복사'), 1400);
+            } catch {
+              const selection = window.getSelection();
+              const range = document.createRange();
+              range.selectNodeContents(code);
+              selection.removeAllRanges();
+              selection.addRange(range);
+              button.textContent = '코드 선택됨';
+              window.setTimeout(() => (button.textContent = '복사'), 1400);
+            }
+          });
+          block.append(button);
+        });
+
+        document.querySelectorAll('[data-tabset]').forEach((tabset) => {
+          const tabs = [...tabset.querySelectorAll('[data-tab]')];
+          const panels = [...tabset.querySelectorAll('[data-panel]')];
+          tabs.forEach((tab, index) => {
+            const id = `tab-${tab.dataset.tab}`;
+            const panel = panels.find((candidate) => candidate.dataset.panel === tab.dataset.tab);
+            tab.id = id;
+            tab.setAttribute('aria-controls', `panel-${tab.dataset.tab}`);
+            tab.setAttribute('tabindex', tab.getAttribute('aria-selected') === 'true' ? '0' : '-1');
+            if (panel) {
+              panel.id = `panel-${tab.dataset.tab}`;
+              panel.setAttribute('aria-labelledby', id);
+            }
+            tab.addEventListener('click', () => activateTab(tab));
+            tab.addEventListener('keydown', (event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              let nextIndex = index;
+              if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+              if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+              if (event.key === 'Home') nextIndex = 0;
+              if (event.key === 'End') nextIndex = tabs.length - 1;
+              activateTab(tabs[nextIndex]);
+              tabs[nextIndex].focus();
+            });
+          });
+
+          function activateTab(selected) {
+            tabs.forEach((tab) => {
+              const active = tab === selected;
+              tab.setAttribute('aria-selected', String(active));
+              tab.setAttribute('tabindex', active ? '0' : '-1');
+            });
+            panels.forEach((panel) => {
+              panel.hidden = panel.dataset.panel !== selected.dataset.tab;
+            });
+          }
+        });
+
+        const searchIndex = sections.map((section) => {
+          const title = section.querySelector('h2')?.textContent?.trim() || section.id;
+          const text = section.textContent.replace(/\s+/g, ' ').trim();
+          return { id: section.id, title, text, normalized: text.toLocaleLowerCase('ko-KR') };
+        });
+
+        function escapeHtml(value) {
+          return value.replace(
+            /[&<>"']/g,
+            (char) =>
+              ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char],
+          );
+        }
+
+        function renderSearch() {
+          const query = searchInput.value.trim().toLocaleLowerCase('ko-KR');
+          if (!query) {
+            searchResults.hidden = true;
+            searchInput.setAttribute('aria-expanded', 'false');
+            return;
+          }
+
+          const matches = searchIndex
+            .filter((entry) => entry.normalized.includes(query))
+            .slice(0, 8)
+            .map((entry) => {
+              const position = entry.normalized.indexOf(query);
+              const start = Math.max(0, position - 45);
+              const excerpt = `${start > 0 ? '…' : ''}${entry.text.slice(start, start + 125)}${
+                start + 125 < entry.text.length ? '…' : ''
+              }`;
+              return `<a class="search-result" role="option" href="#${entry.id}"><strong>${escapeHtml(
+                entry.title,
+              )}</strong><small>${escapeHtml(excerpt)}</small></a>`;
+            });
+
+          searchResults.innerHTML = matches.length
+            ? matches.join('')
+            : '<p class="search-empty">일치하는 장을 찾지 못했습니다.</p>';
+          searchResults.hidden = false;
+          searchInput.setAttribute('aria-expanded', 'true');
+          searchResults.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+              searchResults.hidden = true;
+              searchInput.setAttribute('aria-expanded', 'false');
+            });
+          });
+        }
+
+        searchInput.addEventListener('input', renderSearch);
+        searchInput.addEventListener('focus', renderSearch);
+        document.addEventListener('click', (event) => {
+          if (!event.target.closest('.search-wrap')) {
+            searchResults.hidden = true;
+            searchInput.setAttribute('aria-expanded', 'false');
+          }
+        });
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visible = entries
+              .filter((entry) => entry.isIntersecting)
+              .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+            if (!visible) return;
+            sidebarLinks.forEach((link) => {
+              link.classList.toggle(
+                'active',
+                link.getAttribute('href') === `#${visible.target.id}`,
+              );
+            });
+          },
+          { rootMargin: '-18% 0px -72% 0px', threshold: 0 },
+        );
+        sections.forEach((section) => observer.observe(section));
+      })();
+    </script>
+  </body>
+</html>

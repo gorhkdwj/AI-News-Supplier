@@ -10,6 +10,55 @@
 
 ---
 
+### W-021 · README 요약본과 단일 HTML 사용자 설명서 구축
+
+**요청**
+
+- README는 빠른 시작·전체 기능 요약·일반적인 GitHub 안내로 간결하게 개편
+- CLI와 MCP의 개발 배경, 기능별 예시, 작업 예시와 주의사항을 여러 Markdown이 아닌 하나의 보기 좋은 HTML 설명서로 작성
+
+**수행 작업**
+
+- README를 프로젝트 소개, 주요 기능, 5분 빠른 시작, MCP 빠른 연결, 대표 명령, 지원 소스, 데이터·보안, 개발·기여 중심으로 재구성
+- 외부 CDN·폰트·이미지 없이 단독 실행되는 `docs/index.html` 사용자 설명서 신규 작성
+- 반응형 고정 목차, 문서 검색, 밝은·어두운 테마, 코드 복사, 키보드 조작 탭, 인쇄 스타일과 접근 가능한 시맨틱 구조 구현
+- 실제 CLI 10개 명령·하위 옵션, MCP 도구 9개·프롬프트 3개, 자연어 작업 예시 10개, 랭킹 해석, 소스·설정·보존·복구·문제 해결을 현재 0.1.0 구현 기준으로 문서화
+- npm 패키지 파일 목록에 `docs/index.html`을 추가해 설치 패키지에서도 오프라인 설명서를 열 수 있도록 구성
+
+**변경 파일**
+
+- `README.md`
+- `docs/index.html`
+- `package.json`
+- `Decisionlog.md`
+- `Troubleshootinglog.md`
+- `Worklog.md`
+
+**검증**
+
+- HTML 자동 검사: 중복 ID 0, 깨진 내부 앵커 0, 깨진 상대 링크 0, inline JavaScript 구문 정상, 외부 자산 0
+- 인터페이스 정합성: CLI 상위 명령 10개와 MCP 도구 9개가 설명서에 모두 포함됨
+- `npx prettier --check package.json README.md docs/index.html`: 통과
+- `git diff --check`: 통과
+- `npm run typecheck`: 통과
+- `npm test`: 30개 파일·199개 테스트 통과
+- `npm run lint`: 통과
+- `npm run build`: 통과
+- `npm pack --pack-destination out`: 성공, 패키지 7개 파일 중 `docs/index.html` 포함 확인
+- 빌드 산출물 CLI smoke: 버전 0.1.0, help 10개 명령, doctor DB 무결성 ok, v2 Overview 4개 섹션 조회 성공
+- 비밀정보 패턴 검사: 일치 없음
+
+**판단 근거**
+
+- GitHub 첫 방문자는 짧은 README에서 제품 가치와 설치 가능 여부를 판단하고, 실제 사용자는 한 페이지 설명서의 목차·검색·예시로 필요한 기능을 빠르게 찾는 역할 분리가 적합함
+- 상세 설명을 HTML 한 파일에 모으고 외부 자산을 제거하면 로컬·npm 패키지·향후 GitHub Pages에서 같은 문서를 사용할 수 있음
+- 현재 도움말과 MCP Zod 스키마를 직접 대조해 아직 구현되지 않은 기능을 제공한다고 표현하지 않음
+
+**결과**
+
+- 완료: 요약형 README와 단일 HTML 공식 사용자 설명서 작성·패키징·회귀 검증
+- 남은 작업: 공개 웹 주소가 필요할 때 별도 승인 후 GitHub Pages 배포 설정, 실제 브라우저별 시각 QA
+
 ### W-020 · `/mcp` 미표시 후속 진단과 전역 CLI 실동작 검증
 
 **요청**

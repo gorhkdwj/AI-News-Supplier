@@ -11,7 +11,8 @@
     "ains-mcp": "dist/mcp/server.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/index.html"
   ],
   "scripts": {
     "build": "tsup",
