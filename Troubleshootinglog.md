@@ -10,6 +10,41 @@
 
 ---
 
+### T-005 · VACUUM INTO 백업의 암시적 rowid 보존 비보장
+**발생 상황**
+- v1 사전 백업 복원 시 `items.rowid`와 external-content FTS docid가 안전한지 코드 리뷰
+
+**증상**
+- 로컬 SQLite에서는 간격 있는 rowid 71/701과 FTS MATCH가 보존됐지만, SQLite는 `INTEGER PRIMARY KEY`가 아닌 암시적 rowid를 VACUUM이 변경할 수 있다고 명시함
+
+**확인된 원인**
+- `items.id`는 `TEXT PRIMARY KEY`이며 FTS가 `items.rowid`를 content rowid로 사용하므로 item count만 같은 백업은 안전한 복구본임을 증명하지 못함
+
+**조치**
+- 원본과 백업의 전체 item 값·ID·rowid, FTS row/content·실제 MATCH, trigger, score/learning/source/fetch 상태를 비교하고 불일치 시 마이그레이션을 중단
+- 같은 디렉터리의 `.bak.tmp`에 VACUUM한 뒤 검증 성공 시에만 최종 `.bak`로 rename하며 실패 임시 파일은 정리
+- 고정 v1 fixture에 간격 있는 rowid를 넣어 백업 결과와 실제 FTS 검색을 자동 검증
+
+**재발 방지**
+- 논리 행 수만 확인하지 않고 복구에 필요한 숨은 식별자와 파생 인덱스까지 원본-백업 전수 비교함
+
+### T-004 · 마이그레이션 실패 시 SQLite 연결 미정리
+**발생 상황**
+- 파일 v1 DB의 사전 백업 실패를 강제하는 테스트에서 `openDb` 오류 경로를 검증
+
+**증상**
+- 마이그레이션 오류는 전달되지만 `openDb`가 연 연결이 닫히지 않아 Windows에서 임시 DB 폴더 정리가 `EPERM`으로 실패할 수 있음
+
+**확인된 원인**
+- 기존 `openDb`가 PRAGMA와 `runMigrations`를 호출한 뒤 성공 경로에서만 DB를 반환하며, 초기화 중 예외를 정리하는 `catch`가 없었음
+
+**조치**
+- 초기화·마이그레이션을 `try/catch`로 감싸고 예외 시 열린 연결을 닫은 뒤 원래 오류를 다시 던지도록 수정
+- 실패 중 열린 인스턴스를 포착해 `close` 호출 여부를 확인하는 회귀 테스트 추가
+
+**재발 방지**
+- 파일 자원을 여는 초기화 함수는 성공 경로뿐 아니라 백업·검증·마이그레이션 실패 경로의 정리도 테스트함
+
 ### T-003 · Meta AI 블로그 RSS 피드 404
 **발생 상황**
 - S2 라이브 수집에서 `rss:metaai`가 404

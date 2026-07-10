@@ -16,9 +16,14 @@ export function openDb(dbPath?: string): DB {
     mkdirSync(dirname(path), { recursive: true });
   }
   const db = new Database(path);
-  db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
-  db.pragma('foreign_keys = ON');
-  runMigrations(db);
-  return db;
+  try {
+    db.pragma('journal_mode = WAL');
+    db.pragma('synchronous = NORMAL');
+    db.pragma('foreign_keys = ON');
+    runMigrations(db, { dbPath: path });
+    return db;
+  } catch (error) {
+    if (db.open) db.close();
+    throw error;
+  }
 }

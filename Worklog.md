@@ -10,6 +10,42 @@
 
 ---
 
+### W-013 · Story Sighting 스키마 v2 마이그레이션과 백업 게이트
+**요청**
+- 기존 Story·FTS·점수/학습 이력을 보존하면서 `source_sightings`와 `metric_snapshots`를 추가하고, 파일 v1 DB의 사전 백업·검증·원자적 롤백을 구현
+
+**수행 작업**
+- 스키마 버전을 2로 올리고 Sighting/Snapshot 테이블, CHECK·UNIQUE·부분 유일 인덱스·연쇄 외래키를 추가
+- 기존 item마다 결정적 source key와 24자리 `sightingId`를 사용한 primary `legacy_unverified` Sighting을 백필하고 legacy 시간 정밀도는 모두 `inferred`로 처리
+- 파일 v1 DB를 `VACUUM INTO`로 sibling 백업한 뒤 integrity, user_version, item count를 검증하고, 백업 생성/검증 실패 시 DDL 전에 중단
+- 임시 백업을 검증한 뒤 최종 `.bak`로 전환하고, 원본↔백업 및 트랜잭션 전후의 item/rowid·실제 FTS MATCH·score/learning/source/fetch 상태를 전수 비교
+- 미래 스키마 버전과 중복 legacy source identity 거부, 마이그레이션 실패 원자적 롤백, `openDb` 실패 시 연결 정리를 구현
+- v1 보존, FTS 트리거, source key 우선순위, discussion/activity/score kind, 빈 snapshot, FK와 제약을 테스트
+
+**변경 파일**
+- `src/core/db/migrations.ts`
+- `src/core/db/connection.ts`
+- `src/core/normalize.ts`
+- `tests/core/migrations.test.ts`
+- `tests/fixtures/schema-v1.sql`
+- `Worklog.md`, `Troubleshootinglog.md`
+- `out/sdd/task-2a-report.md`(Git 제외 보고서)
+
+**검증**
+- `npm test -- tests/core/migrations.test.ts`: 13개 통과
+- `npm test`: 54개 통과
+- `npm run typecheck`: 통과
+- `npm run lint`: 통과
+- 대상 파일 Prettier 검사 및 `git diff --check`: 통과
+
+**판단 근거**
+- `docs/requirements-contract.md` 2~3절과 `docs/plans/2026-07-10-trend-ranking-v2-plan.md` V2-1 계약을 우선 적용
+- 기존 저장 로직이 누락 게시 시각을 수집 시각으로 치환하므로 legacy 행의 실제 정밀도를 증명할 수 없어 모두 `inferred`로 백필
+
+**결과**
+- 완료: 스키마 v2, legacy 백필, 파일 백업/검증 게이트, 롤백·미래 버전 방어
+- 남은 작업: Task 2B에서 live Sighting upsert와 수집 계약 연결
+
 ### W-012 · AI NEWS HUB 벤치마크와 유형별 랭킹 v2 계약 확정
 **요청**
 - AI NEWS HUB의 핫레포·커뮤니티·공식 업데이트를 비교하고, 단순 최신성·전역 hotness 문제를 해결하는 수정 계획을 구현 가능한 계약으로 확정

@@ -36,3 +36,8 @@ export function canonicalizeUrl(rawUrl: string): string {
 export function itemId(canonicalUrl: string): string {
   return createHash('sha256').update(canonicalUrl).digest('hex').slice(0, 16);
 }
+
+/** source와 원천 식별자로부터 Sighting id(sha256 앞 24자 hex)를 만든다. */
+export function sightingId(source: string, sourceKey: string): string {
+  return createHash('sha256').update(`${source}\0${sourceKey}`).digest('hex').slice(0, 24);
+}
