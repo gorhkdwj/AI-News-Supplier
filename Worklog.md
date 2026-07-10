@@ -10,6 +10,48 @@
 
 ---
 
+### W-014 · 유형별 트렌드 랭킹 v2 구현과 0.1.0 shadow 릴리스 준비
+
+**요청**
+
+- Story를 유지하면서 출처 관측을 분리하고 Repository·Community·Official·Research에 독립 랭커를 적용하는 확정 계획을 구현
+- 기존 CLI/MCP 호환, Reddit 48시간 보존, 공식 API/RSS 소스 확대, 7일 warmup+7일 shadow 롤아웃을 0.1.0 문서와 메타데이터에 반영
+
+**수행 작업**
+
+- v1 파일 DB 사전 백업과 원자적 v2 마이그레이션, Story/Sighting/Snapshot 저장·조회·기준점·14일 보존을 구현
+- 기존 수집기를 안정적 source key·토론 URL·점수 종류·시간 정밀도·활동 시각 계약으로 전환하고 GitHub 신규/활성 검색과 추적 재관측을 분리
+- Reddit credential+username 게이트, 식별 User-Agent, subreddit별 hot 격리, rate-limit 감시, 삭제 재검증, 48시간 hard purge를 구현
+- Claude Code·Cursor·Figma 공식 피드와 Gemini CLI 안정 GitHub Release 수집을 추가
+- Repository·Community·Official·Research 랭커와 quota 기반 Overview를 독립 모듈로 구현하고 CLI/MCP에 ranking/channel/sort를, MCP `get_item`에 Sighting 상세를 노출
+- 패키지 버전을 0.1.0으로 맞추고 README를 legacy 기본, v2 명시 사용, 입력 조합, 설정·보존·복구·shadow 승인 게이트 기준으로 갱신
+
+**변경 파일**
+
+- `src/core/db`, `src/core/store`, `src/core/ranking`, `src/core/trends`, `src/core/refresh.ts`, `src/core/types.ts`
+- `src/collectors`, `src/cli`, `src/mcp`
+- 관련 `tests/`와 fixture
+- `package.json`, `package-lock.json`, `README.md`, `Worklog.md`
+
+**검증**
+
+- 스키마·저장소·랭커·수집기·CLI/MCP 구현 단계마다 영향 범위 fixture 테스트와 typecheck·lint·diff 검증을 수행
+- 이 기록 시점의 README·패키지 메타데이터는 Prettier와 package-lock 정합성을, W-014는 CommonMark 형식과 실제 CLI help·지원 조합을 대조하고 `git diff --check`를 검증
+- 최종 전체 `npm test`, typecheck, lint, build, `npm pack`과 tarball 검사는 후속 통합 단계에서 새로 실행 예정
+- 라이브 API 지속 동작, 7일+7일 관측, 실제 Repo·Community precision@20은 미검증이며 승인 게이트 미통과
+
+**판단 근거**
+
+- `docs/requirements-contract.md`와 `docs/plans/2026-07-10-trend-ranking-v2-plan.md`의 확정 계약을 우선 적용
+- 유형마다 의미가 다른 점수를 전역으로 섞지 않고, 가짜 과거 스냅샷 없이 실제 기준점이 쌓인 뒤 기본 랭킹 전환 여부를 판단
+- 0.1.0에서는 무옵션 legacy 동작을 보존하고 사용자가 `--ranking v2`를 명시할 때만 유형별 랭킹을 사용
+
+**결과**
+
+- 완료: v2 데이터 경로·수집 정책·유형별 공개 랭킹 인터페이스와 0.1.0 shadow 릴리스 문서 준비
+- 별도 병행: 학습 후보를 v2 Story 단위 근거로 연결하는 작업과 root의 최종 전체 릴리스 검증
+- 전환 보류: 실제 warmup·shadow와 정량/수동 승인 게이트를 통과하기 전까지 legacy 기본 유지
+
 ### W-013 · Story Sighting 스키마 v2 마이그레이션과 백업 게이트
 **요청**
 - 기존 Story·FTS·점수/학습 이력을 보존하면서 `source_sightings`와 `metric_snapshots`를 추가하고, 파일 v1 DB의 사전 백업·검증·원자적 롤백을 구현
