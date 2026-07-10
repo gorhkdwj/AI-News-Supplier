@@ -10,6 +10,46 @@
 
 ---
 
+### W-015 · 유형별 트렌드 랭킹 v2 최종 감사와 릴리스 검증
+
+**요청**
+
+- 확정한 유형별 트렌드 랭킹 v2 계획을 끝까지 구현하고, 자동 검증·패키징·Git 푸시까지 완료
+
+**수행 작업**
+
+- 학습 후보를 v2 Story 단위로 집계하고 채널별 최대 점수, 상위 5개 Story 합, live Community·Repo 24시간 성장률을 연결
+- 독립 전체 감사를 수행해 Story 대표 Sighting 선택, GitHub 검색 경계·추적 재관측 순환, Reddit removed 즉시 삭제, Gemini 응답 검증, 기존 Repo 학습 recency 결함을 수정
+- GitHub 검색을 AI OR 조건과 생성·push 14일, `stars:>=100` 경계로 보정하고 실제 공식 Search API 200 응답을 수동 확인
+- 패키지 버전 0.1.0의 CLI/MCP 번들을 빌드하고 npm tarball 포함 파일과 Git 상태를 검사
+
+**변경 파일**
+
+- `src/core/learning/candidates.ts`, `tests/core/learningV2.test.ts`
+- `src/core/ranking/diversity.ts`, `tests/core/trends/service.test.ts`
+- `src/collectors/github.ts`, `githubRelease.ts`, `reddit.ts`와 관련 fixture·테스트
+- `README.md`, `package.json`, `package-lock.json`, `Worklog.md`, `Troubleshootinglog.md`
+
+**검증**
+
+- `npm test`: 30개 파일, 199개 테스트 통과
+- `npm run typecheck`, `npm run lint`, `npm run build`: 모두 통과
+- `npm pack --json`: 0.1.0 tarball 생성 성공, README·package.json·CLI/MCP 번들·소스맵 6개만 포함
+- CLI/MCP 집중 검증: 2개 파일, 11개 테스트 통과(동일 ID·순서, 9개 도구, stdout 위생 포함)
+- `git diff --check`, clean worktree, 로컬 HEAD와 원격 브랜치 일치 확인
+- 미검증: 7일 warmup+7일 shadow 실데이터, Repo·Community 수동 precision@20, 0.2.0 전환 승인 수치
+
+**판단 근거**
+
+- 0.1.0은 기준점 수집을 시작하는 shadow 릴리스이므로 legacy 기본을 보존하고 가짜 과거 스냅샷을 만들지 않음
+- 독립 감사의 P0/P1을 모두 해소한 뒤 전체 검증을 새로 실행하고, 실제 시간이 필요한 승인 게이트는 통과로 표시하지 않음
+
+**결과**
+
+- 완료: 유형별 랭킹 v2의 스키마·수집·랭킹·CLI/MCP·학습·문서·0.1.0 패키지 검증
+- 원격 반영: `codex/trend-ranking-v2` 브랜치에 단계별 커밋 푸시
+- 후속: 0.2.0 전환 전에 coverage·availability·legacy-v2 비교를 재현하는 내부 보고 스크립트와 실제 14일 관측 결과가 필요
+
 ### W-014 · 유형별 트렌드 랭킹 v2 구현과 0.1.0 shadow 릴리스 준비
 
 **요청**

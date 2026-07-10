@@ -10,6 +10,38 @@
 
 ---
 
+### T-006 · 랭킹 v2 최종 감사에서 경계·재관측 누락 발견
+
+**발생 상황**
+
+- 유형별 랭킹 v2 전체 diff를 계약·fixture·인라인 재현으로 독립 감사
+
+**증상**
+
+- 같은 Story의 낮은 커뮤니티 Sighting이 다양성 재배치 때문에 높은 Sighting보다 대표로 선택될 수 있었음
+- GitHub 신규 검색이 `topic:llm`과 `topic:ai`를 동시에 요구하고 본선의 14일·100-star 경계를 일부 누락했으며, 추적 저장소가 50개를 넘으면 같은 50개만 반복 재관측했음
+- Reddit hot 응답의 removed 게시물이 다음 주기까지 저장될 수 있었고 Gemini Releases의 비정상 200 응답은 표준 parse 오류가 아닌 `TypeError`가 되었음
+- 오래전에 생성됐지만 최근 push된 Trending Repo가 학습 후보의 기간 필터에서 빠졌음
+
+**확인된 원인**
+
+- 전체 후보를 반환할 때도 source diversity가 순서를 바꾼 뒤 Story dedupe를 수행했음
+- GitHub 검색 qualifier의 교집합·부등호·7일 범위와 `last_seen_at DESC` 입력의 앞 50개 고정 선택이 계약 경계와 맞지 않았음
+- Reddit hot 병합 경로가 기존 `/api/info` 경로의 삭제 판정을 공유하지 않았고 Gemini JSON은 TypeScript 단언만 사용했음
+- 학습 recency가 Repo의 `activity_at` 대신 게시·최초 관측 시각만 사용했음
+
+**조치**
+
+- 전체 population에는 diversity 재정렬을 적용하지 않고 최고 점수 Sighting을 Story 대표와 community echo에 사용
+- GitHub 검색을 AI OR, 생성·push 14일, `stars:>=100`으로 수정하고 가장 오래 미관측된 저장소부터 50개씩 순환 재검증
+- Reddit 신규·tracked removed를 같은 refresh에서 제외·삭제하고 삭제 key를 중복 제거하며, Gemini Releases 배열·필드를 런타임 검증해 `CollectorError(kind=parse)`로 분류
+- 학습 Repo 기간 판정에 `activity_at`을 우선 사용하고 기간 밖 alternate Sighting을 sourceSpread·용어·velocity에서 제외
+
+**재발 방지**
+
+- 다중 Sighting 대표 선택, 정확한 경계값, 51개 2주기 재관측, removed hot, malformed 200, 기존 Repo 최근 push를 각각 fixture 회귀 테스트로 고정
+- 단계 테스트 뒤에도 계약 전체를 보는 독립 감사를 수행하고 P0/P1 해소 후 전체 테스트·패키징을 새로 실행
+
 ### T-005 · VACUUM INTO 백업의 암시적 rowid 보존 비보장
 **발생 상황**
 - v1 사전 백업 복원 시 `items.rowid`와 external-content FTS docid가 안전한지 코드 리뷰
