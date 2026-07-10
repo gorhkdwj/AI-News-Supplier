@@ -76,7 +76,17 @@ const ConfigSchema = z.object({
         .object({
           enabled: z.boolean().default(true),
           ttlMinutes: z.number().int().positive().default(60),
-          subreddits: z.array(z.string()).default(['MachineLearning', 'LocalLLaMA', 'artificial']),
+          subreddits: z
+            .array(z.string())
+            .default([
+              'MachineLearning',
+              'LocalLLaMA',
+              'artificial',
+              'ClaudeCode',
+              'ClaudeAI',
+              'cursor',
+              'OpenAI',
+            ]),
         })
         .prefault({}),
       rss: z
@@ -95,6 +105,7 @@ const ConfigSchema = z.object({
         .object({
           clientId: z.string().nullable().default(null),
           clientSecret: z.string().nullable().default(null),
+          username: z.string().nullable().default(null),
         })
         .prefault({}),
     })
@@ -121,8 +132,8 @@ export function loadConfig(): ResolvedConfig {
   if (existsSync(path)) {
     try {
       userRaw = JSON.parse(readFileSync(path, 'utf8'));
-    } catch (err) {
-      logger.warn(`설정 파일 파싱 실패, 기본값 사용: ${path}`, String(err));
+    } catch {
+      logger.warn(`설정 파일 파싱 실패, 기본값 사용: ${path}`);
       userRaw = {};
     }
   }
@@ -146,8 +157,10 @@ function applyEnvOverrides(config: ResolvedConfig): ResolvedConfig {
 
   const redditId = process.env.AINS_REDDIT_CLIENT_ID;
   const redditSecret = process.env.AINS_REDDIT_CLIENT_SECRET;
+  const redditUsername = process.env.AINS_REDDIT_USERNAME;
   if (redditId) config.tokens.reddit.clientId = redditId;
   if (redditSecret) config.tokens.reddit.clientSecret = redditSecret;
+  if (redditUsername) config.tokens.reddit.username = redditUsername;
 
   return config;
 }

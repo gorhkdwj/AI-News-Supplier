@@ -4,6 +4,13 @@ import type { Logger } from '../core/logger.js';
 import type { SourceState } from '../core/store/fetchLog.js';
 import type { LiveSightingInput } from '../core/types.js';
 
+export interface TrackedSightingRef {
+  sourceKey: string;
+  sourceUrl: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
 export interface FetchContext {
   config: ResolvedConfig;
   http: HttpClient;
@@ -12,6 +19,15 @@ export interface FetchContext {
   log: Logger;
   /** 주입 가능한 현재 시각(테스트 결정성). */
   now: Date;
+  /** DB와 분리된 기존 source 추적 참조. */
+  trackedSightings?: readonly TrackedSightingRef[];
+}
+
+/** 로그/상태에 노출해도 되는 비밀정보 없는 요율 한도 관측값. */
+export interface SafeRateLimitStatus {
+  used: number | null;
+  remaining: number | null;
+  resetSeconds: number | null;
 }
 
 export interface CollectorResult {
@@ -20,6 +36,10 @@ export interface CollectorResult {
   notModified?: boolean;
   etag?: string | null;
   lastModified?: string | null;
+  /** 공식 재검증으로 삭제가 확인된 source identity. */
+  deletedSourceKeys?: string[];
+  /** 응답 헤더에서 읽은 비밀정보 없는 요율 한도 상태. */
+  rateLimit?: SafeRateLimitStatus;
 }
 
 export interface Collector {

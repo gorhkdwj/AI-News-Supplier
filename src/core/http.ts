@@ -7,6 +7,8 @@ export interface HttpResponse {
   text: string;
   etag: string | null;
   lastModified: string | null;
+  /** 응답 헤더를 대소문자 구분 없이 조회한다. */
+  header(name: string): string | null;
   json<T>(): T;
 }
 
@@ -30,7 +32,11 @@ export interface HttpPostOptions {
 export interface HttpClient {
   get(url: string, opts?: HttpGetOptions): Promise<HttpResponse>;
   /** application/x-www-form-urlencoded POST (OAuth 토큰 발급 등). */
-  postForm(url: string, body: Record<string, string>, opts?: HttpPostOptions): Promise<HttpResponse>;
+  postForm(
+    url: string,
+    body: Record<string, string>,
+    opts?: HttpPostOptions,
+  ): Promise<HttpResponse>;
 }
 
 interface RequestSpec {
@@ -77,6 +83,9 @@ async function doRequest(url: string, spec: RequestSpec): Promise<HttpResponse> 
       text,
       etag: res.headers.get('etag'),
       lastModified: res.headers.get('last-modified'),
+      header(name: string): string | null {
+        return res.headers.get(name);
+      },
       json<T>(): T {
         return JSON.parse(text) as T;
       },
@@ -86,10 +95,7 @@ async function doRequest(url: string, spec: RequestSpec): Promise<HttpResponse> 
   }
 }
 
-async function withRetry(
-  retries: number,
-  run: () => Promise<HttpResponse>,
-): Promise<HttpResponse> {
+async function withRetry(retries: number, run: () => Promise<HttpResponse>): Promise<HttpResponse> {
   let lastErr: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -124,7 +130,11 @@ export function createHttpClient(): HttpClient {
         }),
       );
     },
-    postForm(url: string, body: Record<string, string>, opts: HttpPostOptions = {}): Promise<HttpResponse> {
+    postForm(
+      url: string,
+      body: Record<string, string>,
+      opts: HttpPostOptions = {},
+    ): Promise<HttpResponse> {
       const encoded = new URLSearchParams(body).toString();
       return withRetry(opts.retries ?? 2, () =>
         doRequest(url, {

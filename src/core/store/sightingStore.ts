@@ -627,22 +627,143 @@ export function listTrackedSightings(db: DB, source: string, limit: number): Sou
   return rows.map((row) => rowToSighting(row, getMetricHistory(db, row.id)));
 }
 
+export interface TrackedSightingReference {
+  sourceKey: string;
+  sourceUrl: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+interface TrackedSightingReferenceRow {
+  source_key: string;
+  source_url: string;
+  first_seen_at: string;
+  last_seen_at: string;
+}
+
+/** 재관측 입력에 필요한 최소 필드만 결정적 순서로 조회한다. */
+export function listTrackedSightingReferences(db: DB, source: string): TrackedSightingReference[] {
+  const rows = db
+    .prepare(
+      `SELECT source_key, source_url, first_seen_at, last_seen_at
+       FROM source_sightings
+       WHERE source = ?
+       ORDER BY last_seen_at DESC, source_key ASC, id ASC`,
+    )
+    .all(source) as TrackedSightingReferenceRow[];
+  return rows.map((row) => ({
+    sourceKey: row.source_key,
+    sourceUrl: row.source_url,
+    firstSeenAt: row.first_seen_at,
+    lastSeenAt: row.last_seen_at,
+  }));
+}
+
+interface SightingIdentityRow {
+  id: string;
+  story_id: string;
+}
+
+export interface DeleteSightingsResult {
+  deletedSightings: number;
+  deletedStories: number;
+}
+
+function removeStoryIdsFromLearningHistory(db: DB, storyIds: ReadonlySet<string>): void {
+  if (storyIds.size === 0) return;
+  const rows = db.prepare('SELECT id, item_ids FROM learning_history').all() as {
+    id: number;
+    item_ids: string;
+  }[];
+  const update = db.prepare('UPDATE learning_history SET item_ids = ? WHERE id = ?');
+  for (const row of rows) {
+    let itemIds: unknown;
+    try {
+      itemIds = JSON.parse(row.item_ids) as unknown;
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(itemIds)) continue;
+    const retained = itemIds.filter((value) => typeof value !== 'string' || !storyIds.has(value));
+    if (retained.length !== itemIds.length) update.run(JSON.stringify(retained), row.id);
+  }
+}
+
+/** 호출자가 연 트랜잭션 안에서 Sighting을 지우고 Story projection을 복구한다. */
+function deleteSightingRows(db: DB, rows: readonly SightingIdentityRow[]): DeleteSightingsResult {
+  if (rows.length === 0) return { deletedSightings: 0, deletedStories: 0 };
+  const deleteSightingRow = db.prepare('DELETE FROM source_sightings WHERE id = ?');
+  const affectedStoryIds = new Set(rows.map((row) => row.story_id));
+  let deletedSightings = 0;
+  for (const row of rows) deletedSightings += deleteSightingRow.run(row.id).changes;
+
+  const deletedStoryIds = new Set<string>();
+  const countSightings = db.prepare(
+    'SELECT COUNT(*) AS count FROM source_sightings WHERE story_id = ?',
+  );
+  const deleteStory = db.prepare('DELETE FROM items WHERE id = ?');
+  for (const storyId of affectedStoryIds) {
+    const remaining = countSightings.get(storyId) as { count: number };
+    if (remaining.count === 0) {
+      if (deleteStory.run(storyId).changes > 0) deletedStoryIds.add(storyId);
+    } else {
+      recomputeStoryPrimary(db, storyId);
+    }
+  }
+  removeStoryIdsFromLearningHistory(db, deletedStoryIds);
+  return { deletedSightings, deletedStories: deletedStoryIds.size };
+}
+
+/** source identity 목록을 한 트랜잭션에서 삭제하고 남은 Story를 복구한다. */
+export function deleteSightingsBySourceKeys(
+  db: DB,
+  source: string,
+  sourceKeys: readonly string[],
+): DeleteSightingsResult {
+  const uniqueKeys = [...new Set(sourceKeys)];
+  if (uniqueKeys.length === 0) return { deletedSightings: 0, deletedStories: 0 };
+  const find = db.prepare(
+    'SELECT id, story_id FROM source_sightings WHERE source = ? AND source_key = ?',
+  );
+  const tx = db.transaction((keys: readonly string[]) => {
+    const rows = keys
+      .map((sourceKey) => find.get(source, sourceKey) as SightingIdentityRow | undefined)
+      .filter((row): row is SightingIdentityRow => row !== undefined);
+    return deleteSightingRows(db, rows);
+  });
+  return tx(uniqueKeys);
+}
+
+/** Reddit Sighting을 최초 관측 후 48시간이 지나면 학습 이력과 무관하게 삭제한다. */
+export function purgeRedditSightings(
+  db: DB,
+  nowIso: string = new Date().toISOString(),
+): DeleteSightingsResult {
+  const nowMs = new Date(nowIso).getTime();
+  if (Number.isNaN(nowMs)) throw new Error(`Invalid observation time: ${nowIso}`);
+  const cutoff = new Date(nowMs - 48 * 3_600_000).toISOString();
+  const tx = db.transaction((cutoffIso: string) => {
+    const rows = db
+      .prepare(
+        `SELECT id, story_id
+         FROM source_sightings
+         WHERE source = 'reddit'
+           AND first_seen_at < ?
+         ORDER BY story_id ASC, id ASC`,
+      )
+      .all(cutoffIso) as SightingIdentityRow[];
+    return deleteSightingRows(db, rows);
+  });
+  return tx(cutoff);
+}
+
 /** Sighting 하나를 삭제하고 남은 Story의 primary를 원자적으로 복구한다. */
 export function deleteSighting(db: DB, sightingIdValue: string): boolean {
   const tx = db.transaction((id: string): boolean => {
-    const row = db.prepare('SELECT story_id FROM source_sightings WHERE id = ?').get(id) as
-      { story_id: string } | undefined;
+    const row = db.prepare('SELECT id, story_id FROM source_sightings WHERE id = ?').get(id) as
+      SightingIdentityRow | undefined;
     if (row === undefined) return false;
-
-    db.prepare('DELETE FROM source_sightings WHERE id = ?').run(id);
-    const remaining = db
-      .prepare('SELECT COUNT(*) AS count FROM source_sightings WHERE story_id = ?')
-      .get(row.story_id) as { count: number };
-    if (remaining.count === 0) {
-      db.prepare('DELETE FROM items WHERE id = ?').run(row.story_id);
-    } else {
-      recomputeStoryPrimary(db, row.story_id);
-    }
+    deleteSightingRows(db, [row]);
     return true;
   });
   return tx(sightingIdValue);

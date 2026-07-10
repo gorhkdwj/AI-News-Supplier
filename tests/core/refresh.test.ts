@@ -2,11 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { openDb, type DB } from '../../src/core/db/connection.js';
+import { resetRedditTokenCache } from '../../src/collectors/reddit.js';
 import { refreshStale } from '../../src/core/refresh.js';
 import { defaultConfig } from '../../src/core/config.js';
 import { countItems } from '../../src/core/store/itemStore.js';
-import { upsertSightings } from '../../src/core/store/sightingStore.js';
-import { stubHttp } from '../helpers/stubHttp.js';
+import { getSightingBySourceKey, upsertSightings } from '../../src/core/store/sightingStore.js';
+import { stubHttp, type StubRequest } from '../helpers/stubHttp.js';
 
 const hnFixture = readFileSync(
   fileURLToPath(new URL('../fixtures/hn-search.json', import.meta.url)),
@@ -22,6 +23,14 @@ const cursorFixture = readFileSync(
 );
 const geminiReleaseFixture = readFileSync(
   fileURLToPath(new URL('../fixtures/gemini-cli-releases.json', import.meta.url)),
+  'utf8',
+);
+const redditHotFixture = readFileSync(
+  fileURLToPath(new URL('../fixtures/reddit-hot.json', import.meta.url)),
+  'utf8',
+);
+const redditInfoFixture = readFileSync(
+  fileURLToPath(new URL('../fixtures/reddit-info.json', import.meta.url)),
   'utf8',
 );
 
@@ -137,6 +146,155 @@ describe('refreshStale', () => {
 
     expect(countItems(db)).toBe(1);
     expect(db.prepare('SELECT COUNT(*) FROM metric_snapshots').pluck().get()).toBe(0);
+  });
+
+  it('Reddit이 비활성이어도 매 refresh마다 first_seen 48시간 초과 Sighting을 hard purge한다', async () => {
+    upsertSightings(
+      db,
+      [
+        {
+          source: 'reddit',
+          sourceKey: 'expired-reddit',
+          type: 'community',
+          title: 'Expired Reddit',
+          url: 'https://example.com/expired-reddit',
+          discussionUrl: 'https://www.reddit.com/r/ai/comments/expired-reddit',
+          summary: null,
+          author: null,
+          score: 1,
+          scoreKind: 'upvotes',
+          commentsCount: 0,
+          tags: ['r/ai'],
+          publishedAt: '2026-07-08T00:00:00.000Z',
+          publishedPrecision: 'exact_time',
+          activityAt: null,
+          raw: { id: 'expired-reddit' },
+        },
+      ],
+      '2026-07-08T11:59:59.999Z',
+    );
+    const config = defaultConfig();
+    config.retentionDays = null;
+
+    await refreshStale(db, config, {
+      now: new Date('2026-07-10T12:00:00.000Z'),
+      sources: ['not-registered'],
+    });
+
+    expect(getSightingBySourceKey(db, 'reddit', 'expired-reddit')).toBeNull();
+    expect(countItems(db)).toBe(0);
+  });
+
+  it('collector에 기존 Reddit 추적 참조를 전달하고 공식 missing key 삭제를 저장소에 반영한다', async () => {
+    resetRedditTokenCache();
+    const seeded = upsertSightings(
+      db,
+      [
+        {
+          source: 'reddit',
+          sourceKey: 'missing',
+          type: 'community',
+          title: 'Tracked missing Reddit',
+          url: 'https://example.com/tracked-missing',
+          discussionUrl: 'https://www.reddit.com/r/ai/comments/missing',
+          summary: null,
+          author: null,
+          score: 1,
+          scoreKind: 'upvotes',
+          commentsCount: 0,
+          tags: ['r/ai'],
+          publishedAt: '2026-07-10T09:00:00.000Z',
+          publishedPrecision: 'exact_time',
+          activityAt: null,
+          raw: { id: 'missing' },
+        },
+      ],
+      '2026-07-10T10:00:00.000Z',
+    );
+    const config = defaultConfig();
+    config.retentionDays = null;
+    config.tokens.reddit = {
+      clientId: 'fixture-id',
+      clientSecret: 'fixture-secret',
+      username: 'fixture-user',
+    };
+    config.sources.reddit.subreddits = ['MachineLearning'];
+    const requests: StubRequest[] = [];
+    const http = stubHttp(
+      [
+        { match: 'access_token', body: '{"access_token":"fixture-token","expires_in":3600}' },
+        { match: '/api/info', body: redditInfoFixture },
+        { match: '/hot?', body: redditHotFixture },
+      ],
+      requests,
+    );
+
+    const summary = await refreshStale(db, config, {
+      http,
+      now: new Date('2026-07-10T12:00:00.000Z'),
+      sources: ['reddit'],
+      force: true,
+    });
+
+    expect(summary.results).toEqual([expect.objectContaining({ source: 'reddit', status: 'ok' })]);
+    expect(requests.some((request) => request.url.includes('/api/info?id=t3_missing'))).toBe(true);
+    expect(getSightingBySourceKey(db, 'reddit', 'missing')).toBeNull();
+    expect(
+      db
+        .prepare('SELECT COUNT(*) FROM metric_snapshots WHERE sighting_id = ?')
+        .pluck()
+        .get(seeded.sightingIds[0]),
+    ).toBe(0);
+  });
+
+  it('48시간 초과 Reddit 글이 같은 refresh의 hot 결과에 있어도 first_seen 수명을 초기화하지 않는다', async () => {
+    resetRedditTokenCache();
+    upsertSightings(
+      db,
+      [
+        {
+          source: 'reddit',
+          sourceKey: 'abc',
+          type: 'community',
+          title: 'Old tracked Reddit',
+          url: 'https://example.com/new-llm',
+          discussionUrl: 'https://www.reddit.com/r/LocalLLaMA/comments/abc/new_open_llm/',
+          summary: null,
+          author: null,
+          score: 1,
+          scoreKind: 'upvotes',
+          commentsCount: 0,
+          tags: ['r/LocalLLaMA'],
+          publishedAt: '2026-07-08T00:00:00.000Z',
+          publishedPrecision: 'exact_time',
+          activityAt: null,
+          raw: { id: 'abc' },
+        },
+      ],
+      '2026-07-08T11:59:59.999Z',
+    );
+    const config = defaultConfig();
+    config.retentionDays = null;
+    config.tokens.reddit = {
+      clientId: 'fixture-id',
+      clientSecret: 'fixture-secret',
+      username: 'fixture-user',
+    };
+    config.sources.reddit.subreddits = ['MachineLearning'];
+    const http = stubHttp([
+      { match: 'access_token', body: '{"access_token":"fixture-token","expires_in":3600}' },
+      { match: '/api/info', body: redditInfoFixture },
+      { match: '/hot?', body: redditHotFixture },
+    ]);
+
+    await refreshStale(db, config, {
+      http,
+      now: new Date('2026-07-10T12:00:00.000Z'),
+      sources: ['reddit'],
+      force: true,
+    });
+
+    expect(getSightingBySourceKey(db, 'reddit', 'abc')).toBeNull();
   });
 
   it('같은 공식 URL의 RSS와 HN을 Story 하나와 독립 Sighting 둘로 저장한다', async () => {

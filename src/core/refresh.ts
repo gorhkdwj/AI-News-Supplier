@@ -3,7 +3,13 @@ import type { DB } from './db/connection.js';
 import { createHttpClient, type HttpClient } from './http.js';
 import { logger } from './logger.js';
 import { purgeOld } from './store/itemStore.js';
-import { purgeMetricSnapshots, upsertSightings } from './store/sightingStore.js';
+import {
+  deleteSightingsBySourceKeys,
+  listTrackedSightingReferences,
+  purgeMetricSnapshots,
+  purgeRedditSightings,
+  upsertSightings,
+} from './store/sightingStore.js';
 import {
   getSourceState,
   insertFetchLog,
@@ -105,7 +111,11 @@ async function refreshOne(
   }
 
   markAttempt(db, collector.name, nowIso);
-  const ctx: FetchContext = { config, http, state, log: logger, now };
+  const trackedSightings =
+    collector.name === 'reddit' || collector.name === 'github'
+      ? listTrackedSightingReferences(db, collector.name)
+      : [];
+  const ctx: FetchContext = { config, http, state, log: logger, now, trackedSightings };
 
   try {
     const result = await withTimeout(collector.fetch(ctx), timeoutMs, collector.name);
@@ -128,7 +138,12 @@ async function refreshOne(
       return { source: collector.name, status: 'not_modified', itemsFound: 0, itemsNew: 0 };
     }
 
-    const { found, created } = upsertSightings(db, result.items, nowIso);
+    const applyResult = db.transaction(() => {
+      const upserted = upsertSightings(db, result.items, nowIso);
+      deleteSightingsBySourceKeys(db, collector.name, result.deletedSourceKeys ?? []);
+      return upserted;
+    })();
+    const { found, created } = applyResult;
     markSuccess(db, collector.name, {
       now: nowIso,
       etag: result.etag,
@@ -214,5 +229,10 @@ export async function refreshStale(
   const results = await runWithConcurrency(collectors, concurrency, (c) =>
     refreshOne(db, config, http, c, now, opts.force ?? false, timeoutMs),
   );
+  // 수집 결과를 적용한 뒤 first_seen_at 기준으로 삭제해야 재발견이 수명을 초기화하지 않는다.
+  const purgedReddit = purgeRedditSightings(db, now.toISOString());
+  if (purgedReddit.deletedSightings > 0) {
+    logger.info(`보존 정책: 48시간 초과 Reddit Sighting ${purgedReddit.deletedSightings}건 정리`);
+  }
   return { results };
 }
