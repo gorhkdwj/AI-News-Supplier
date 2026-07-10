@@ -10,6 +10,35 @@
 
 ---
 
+### T-007 · pnpm 실행으로 npm 의존성이 `.ignored`로 이동
+
+**발생 상황**
+
+- Codex 연동 커밋 전 회귀 검증에서 셸 PATH에 npm이 없어 번들 pnpm으로 package scripts 실행을 시도함.
+
+**증상**
+
+- pnpm이 npm으로 설치된 직접 의존성을 `node_modules/.ignored/`로 이동해 기존 `.bin` 경로가 깨짐.
+- `npm ci` 복구 시 실행 중인 `ains` MCP가 `better_sqlite3.node`를 사용하고 있어 Windows `EPERM unlink`로 중단됨.
+
+**확인된 원인**
+
+- `package-lock.json` 기반 npm 프로젝트의 기존 `node_modules`에 다른 패키지 관리자인 pnpm을 사용함.
+- 전역 `npm link`된 `ains-mcp` 프로세스들이 이 저장소의 better-sqlite3 네이티브 모듈을 로드해 삭제 잠금을 보유함.
+
+**조치**
+
+- pnpm 검증 명령을 즉시 중단하고 NVM의 Node v24.14.1/npm 11.11.0 경로를 확인함.
+- `npm install --no-audit --no-fund`로 누락된 298개 패키지를 복구한 뒤 build/typecheck/test/lint를 모두 통과함.
+- 실행 명령이 `ains-mcp`인 Node 프로세스 5개만 식별·종료하고, 작업공간 내부 경로를 검증한 후 `node_modules/.ignored`를 삭제함.
+- 복구·정리 후 Git 추적 파일에 의도하지 않은 변경이 없음을 확인함.
+
+**재발 방지**
+
+- `package-lock.json`이 있는 이 프로젝트의 검증·설치는 npm만 사용함.
+- 샌드박스 PATH에 npm이 없으면 pnpm으로 대체하지 말고 프로젝트가 사용한 NVM Node/npm 절대경로를 먼저 확인함.
+- better-sqlite3 삭제가 필요한 재설치 전에는 전역 링크로 실행 중인 `ains-mcp` 프로세스의 파일 잠금을 확인함.
+
 ### T-006 · 랭킹 v2 최종 감사에서 경계·재관측 누락 발견
 
 **발생 상황**

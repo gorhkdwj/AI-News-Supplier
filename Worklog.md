@@ -10,6 +10,85 @@
 
 ---
 
+### W-017 · 랭킹 v2 브랜치의 main 병합과 MCP 0.1.0 전환
+
+**요청**
+
+- `codex/trend-ranking-v2`를 기존 로컬 변경을 보존하는 안전한 순서로 `main`에 병합
+
+**수행 작업**
+
+- 기존 `Worklog.md`, `Troubleshootinglog.md` 변경만 stash하고 `.codex/`, `AGENTS.md`는 작업 트리에 유지
+- 원격 `main`·기능 브랜치 동기화를 확인한 뒤 15개 커밋을 `--ff-only`로 병합
+- stash 로그 충돌을 양쪽 내용 보존 방식으로 해결하고 기존 W-012/T-004를 W-016/T-007로 재번호화
+- 병합된 `main`에서 0.1.0 번들을 다시 빌드하고 전역 `ains`, `ains-mcp`가 새 빌드를 가리키는지 확인
+- 임시 `AINS_HOME`으로 MCP를 기동해 실제 사용자 DB를 건드리지 않고 v2 도구 계약을 검증
+
+**변경 파일**
+
+- 기능 브랜치의 v2 구현 파일 84개를 fast-forward 반영
+- 병합 기록 정리: `Worklog.md`, `Troubleshootinglog.md`
+- 커밋 제외·보존: `.codex/`, `AGENTS.md`
+
+**검증**
+
+- `npm test`: 30개 파일, 199개 테스트 통과
+- `npm run typecheck`, `npm run lint`, `npm run build`: 모두 통과
+- 전역 `ains --version`: 0.1.0
+- MCP stdio 연결: 도구 9개, `get_trends`의 `ranking_version`·`channel`·`sort` 입력 확인
+- `npm pack --json`: README·package.json·CLI/MCP 번들·소스맵 6개만 포함
+
+**판단 근거**
+
+- `main`이 기능 브랜치의 merge-base와 같아 merge commit 없이 fast-forward가 가장 단순하고 추적 가능함
+- 실제 사용자 DB의 첫 v2 마이그레이션은 앱 재시작 뒤 수행되므로 병합 검증에서는 임시 데이터 홈을 사용
+
+**결과**
+
+- 완료: `main`의 코드·빌드·전역 MCP를 0.1.0 v2로 전환하고 전체 검증 통과
+- 보존: 프로젝트 전용 MCP 설정과 `AGENTS.md`는 기존 미추적 상태 유지
+- 후속: Codex 앱 재시작 후 프로젝트 `/mcp`에서 `ains` 재연결 확인 필요
+
+### W-016 · Codex 프로젝트 연동 검증
+
+**요청**
+
+- 미커밋 상태인 `AGENTS.md`와 `.codex/config.toml`의 커밋·푸시 전 검증
+
+**수행 작업**
+
+- `AGENTS.md`와 `CLAUDE.md`를 비교해 제목과 주요 사용자 예시 두 줄만 의도대로 다른지 확인
+- 신규 파일의 대표 비밀값·개인 절대경로 패턴 및 프로젝트 참조 정합성 검사
+- `.codex/config.toml` TOML 파싱, `package.json`의 `ains-mcp` bin 및 빌드 산출물 경로 일치 확인
+- 현재 Codex 도구 레지스트리에서 `ains` MCP 도구 9종 확인 후 `get_source_status`를 실제 호출해 구조화 응답 확인
+- 빌드·타입 검사·전체 테스트·린트 fresh 실행
+- 검증 중 잘못 선택한 pnpm이 npm 의존성을 `.ignored`로 이동한 문제를 복구하고 잔여 복제본 정리(T-007)
+
+**변경 파일**
+
+- Worklog.md, Troubleshootinglog.md
+- 검증 대상(기존 미추적): AGENTS.md, .codex/config.toml
+
+**검증**
+
+- `npm run build`: 통과, CLI/MCP 산출물 생성
+- `npm run typecheck`: 통과
+- `npm test`: 11개 테스트 파일, 43개 테스트 모두 통과
+- `npm run lint`: 통과
+- TOML 구조 검사 및 AGENTS 동기화 검사: 통과
+- Codex MCP 실제 호출: 도구 9종 등록, `get_source_status` 정상 응답
+- 복구 후 Git 추적 파일 오염 없음 확인(로그 기록 전 기준 미추적 2개만 존재)
+
+**판단 근거**
+
+- 신규 파일은 제품 계약·실행 코드·npm 배포물에 영향을 주지 않는 Codex 협업/연동 설정이며 민감정보를 포함하지 않음.
+- 실제 Codex 세션에서 프로젝트 설정 로드부터 MCP 도구 호출까지 확인했으므로 커밋·푸시를 막는 기능상 문제는 없음.
+
+**결과**
+
+- 완료: 두 신규 파일의 공개 저장소 커밋 적합성과 Codex MCP 연결 검증
+- 참고: AGENTS.md와 CLAUDE.md의 향후 동기화 관리 필요. 정리 과정에서 현재 작업의 ains MCP 전송 연결을 종료했으므로 다음 작업 시작 또는 앱 재로딩 후 자동 재기동 여부는 확인 필요.
+
 ### W-015 · 유형별 트렌드 랭킹 v2 최종 감사와 릴리스 검증
 
 **요청**
