@@ -295,6 +295,28 @@ describe('core trend service', () => {
     expect(result.items.every((item) => item.hotness === item.ranking.score)).toBe(true);
   });
 
+  it('preserves the legacy latest-500 candidate cap and equal-time input order', () => {
+    const connection = db();
+    const inputs = Array.from({ length: 501 }, (_, index) =>
+      live({
+        source: 'hackernews',
+        sourceKey: `legacy-cap-${String(index).padStart(3, '0')}`,
+        title: `Legacy cap ${index}`,
+        url: `https://example.com/legacy-cap/${index}`,
+        score: 10,
+        publishedAt: '2026-07-10T10:00:00.000Z',
+      }),
+    );
+    upsertItems(connection, inputs, NOW.toISOString());
+
+    const result = getTrends(connection, { limit: 500 }, { now: NOW, maxPerSourceRatio: 1 });
+
+    expect(result.items).toHaveLength(500);
+    expect(result.items.map((item) => item.id)).toEqual(
+      inputs.slice(0, 500).map((input) => itemId(input.url)),
+    );
+  });
+
   it('returns primary-first Sightings with ascending metric history in item detail', () => {
     const connection = db();
     const url = 'https://vendor.example.com/detail';

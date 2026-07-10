@@ -219,8 +219,9 @@ export function queryLegacyTrendItems(db: DB, query: LegacyTrendQuery): NewsItem
     .prepare(
       `SELECT * FROM items
        WHERE ${conditions.join(' AND ')}
-       ORDER BY COALESCE(published_at, '') DESC, id ASC`,
+       ORDER BY COALESCE(published_at, '') DESC
+       LIMIT ?`,
     )
-    .all(...parameters) as ItemSqlRow[];
+    .all(...parameters, 500) as ItemSqlRow[];
   return rows.map(rowToItem);
 }
