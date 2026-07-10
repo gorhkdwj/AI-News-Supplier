@@ -10,6 +10,39 @@
 
 ---
 
+### W-018 · Codex 프로젝트 지침과 MCP 설정 저장소 반영
+
+**요청**
+
+- 병합 과정에서 보존만 했던 `AGENTS.md`, `.codex/config.toml`을 프로젝트 설정으로 커밋·푸시
+
+**수행 작업**
+
+- `AGENTS.md`를 `CLAUDE.md`와 대조해 파일명·대상 에이전트 표현 외 작업 헌법이 동일한지 재확인
+- `.codex/config.toml`이 프로젝트 범위의 `ains-mcp` stdio 서버만 등록하고 비밀정보·개인 절대경로를 포함하지 않는지 확인
+- 병합된 main의 전역 `ains-mcp`가 0.1.0 v2 도구 9개를 노출하는 기존 검증 결과와 설정 명령을 대조
+
+**변경 파일**
+
+- `AGENTS.md`
+- `.codex/config.toml`
+- `Worklog.md`
+
+**검증**
+
+- TOML 섹션·command 구문 확인
+- `AGENTS.md`↔`CLAUDE.md` 의도된 차이 확인
+- 비밀정보 패턴, Git ignore 여부, `git diff --check` 확인
+
+**판단 근거**
+
+- 두 파일은 로컬 데이터가 아니라 저장소를 여는 Codex 에이전트 전체가 공유해야 하는 프로젝트 지침·MCP 연결 설정임
+- `command = "ains-mcp"`는 npm 패키지의 공개 bin 이름을 사용해 개인 경로에 의존하지 않음
+
+**결과**
+
+- 완료: Codex 프로젝트 지침과 ains MCP 자동 등록 설정을 main 추적 파일로 전환
+
 ### W-017 · 랭킹 v2 브랜치의 main 병합과 MCP 0.1.0 전환
 
 **요청**
