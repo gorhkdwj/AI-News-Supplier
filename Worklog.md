@@ -10,6 +10,33 @@
 
 ---
 
+### W-012 · AI NEWS HUB 벤치마크와 유형별 랭킹 v2 계약 확정
+**요청**
+- AI NEWS HUB의 핫레포·커뮤니티·공식 업데이트를 비교하고, 단순 최신성·전역 hotness 문제를 해결하는 수정 계획을 구현 가능한 계약으로 확정
+
+**수행 작업**
+- AI NEWS HUB 공개 화면/API를 GitHub Trending·HN·Reddit·공식 RSS/원문과 교차 확인
+- 현재 ains의 수집 후보, 점수식, canonical 중복, CLI/MCP 노출을 코드·계약·테스트 기준으로 감사
+- Story/Sighting/Snapshot 데이터 모델, Repo·Community·Official·Research 랭킹 공식, Overview·호환 인터페이스, warmup/shadow 게이트 확정
+- 공식 RSS/Atom/API가 확인된 Claude Code, Cursor, Figma, Gemini CLI와 Reddit 최신 정책을 외부 자료로 기록
+
+**변경 파일**
+- `docs/plans/2026-07-10-trend-ranking-v2-plan.md`
+- `docs/requirements-contract.md`
+- `Decisionlog.md`
+- `Worklog.md`
+
+**검증**
+- 문서 간 스키마·공식·CLI/MCP 옵션·보존 기간·롤아웃 수치 정합성을 `rg`와 `git diff --check`로 확인
+- 문서 선행 단계이므로 런타임 테스트는 실행하지 않음
+
+**판단 근거**
+- 코드보다 기준 계약을 먼저 갱신해야 한다는 프로젝트 원칙과, 타입마다 서로 다른 화제성 신호를 사용해야 한다는 벤치마크 결론
+
+**결과**
+- 완료: 구현이 의사결정 없이 진행 가능한 v2 계약과 단계 계획 확정
+- 남은 작업: 스키마 v2부터 fixture 기반 TDD로 구현하고 7일 warmup·7일 shadow 수행
+
 ### W-011 · 로컬 전역 설치 사용성 확인 및 문서 보강
 **요청**
 - API 키 발급 없이 어떻게 동작하는지, 로컬 터미널에 설치해 바로 쓸 수 있는지 확인
