@@ -101,6 +101,55 @@ describe('githubCollector', () => {
     );
   });
 
+  it('50개 초과 추적 저장소는 다음 주기에 미관측 항목을 순환 재확인한다', async () => {
+    const firstRequests: StubRequest[] = [];
+    const tracked = Array.from({ length: 51 }, (_, index) => trackedRepo(index));
+    await githubCollector.fetch(
+      ctx(
+        stubHttp(
+          [
+            { match: '/search/repositories', body: fixture },
+            { match: '/repos/', body: repositoryFixture },
+          ],
+          firstRequests,
+        ),
+        tracked,
+      ),
+    );
+    const firstRepositoryUrls = firstRequests
+      .filter((request) => request.url.includes('/repos/'))
+      .map((request) => request.url);
+    expect(firstRepositoryUrls).toHaveLength(50);
+    expect(firstRepositoryUrls.some((url) => url.endsWith('/tracked/repo-50'))).toBe(false);
+
+    const secondRequests: StubRequest[] = [];
+    const nextTracked = tracked.map((reference, index) => ({
+      ...reference,
+      lastSeenAt: firstRepositoryUrls.some((url) => url.endsWith(`/tracked/repo-${index}`))
+        ? '2026-07-10T00:00:00.000Z'
+        : reference.lastSeenAt,
+    }));
+    await githubCollector.fetch(
+      ctx(
+        stubHttp(
+          [
+            { match: '/search/repositories', body: fixture },
+            { match: '/repos/', body: repositoryFixture },
+          ],
+          secondRequests,
+        ),
+        nextTracked,
+      ),
+    );
+
+    const secondRepositoryUrls = secondRequests
+      .filter((request) => request.url.includes('/repos/'))
+      .map((request) => request.url);
+    expect(secondRepositoryUrls).toHaveLength(50);
+    expect(secondRepositoryUrls.some((url) => url.endsWith('/tracked/repo-50'))).toBe(true);
+    expect(secondRepositoryUrls.some((url) => url.endsWith('/tracked/repo-49'))).toBe(false);
+  });
+
   it('canonical URL source key를 쓰는 legacy 추적 행도 재확인해 숫자 repository ID로 반환한다', async () => {
     const requests: StubRequest[] = [];
     const legacyReference = {

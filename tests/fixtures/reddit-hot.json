@@ -29,6 +29,22 @@
           "subreddit": "MachineLearning",
           "stickied": true
         }
+      },
+      {
+        "data": {
+          "id": "removed-hot",
+          "title": "A removed model announcement",
+          "url": "https://www.reddit.com/r/LocalLLaMA/comments/removed-hot/removed/",
+          "permalink": "/r/LocalLLaMA/comments/removed-hot/removed/",
+          "ups": 99,
+          "num_comments": 12,
+          "author": "[deleted]",
+          "created_utc": 1783555300,
+          "subreddit": "LocalLLaMA",
+          "stickied": false,
+          "selftext": "[removed]",
+          "removed_by_category": "moderator"
+        }
       }
     ]
   }

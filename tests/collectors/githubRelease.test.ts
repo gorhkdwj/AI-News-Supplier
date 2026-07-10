@@ -64,4 +64,27 @@ describe('Gemini CLI release collector', () => {
       },
     });
   });
+
+  it.each(['{}', '[{}]'])('비정상 200 응답 %s를 parse CollectorError로 분류한다', async (body) => {
+    const config = defaultConfig();
+    const collector = allCollectors(config).find(
+      (candidate) => candidate.name === 'github_release:gemini-cli',
+    );
+    expect(collector).toBeDefined();
+    if (collector === undefined) return;
+
+    await expect(
+      collector.fetch({
+        config,
+        http: stubHttp([{ match: '/google-gemini/gemini-cli/releases', body }]),
+        state: null,
+        log: logger,
+        now: new Date('2026-07-10T00:00:00Z'),
+      }),
+    ).rejects.toMatchObject({
+      name: 'CollectorError',
+      source: 'github_release:gemini-cli',
+      kind: 'parse',
+    });
+  });
 });

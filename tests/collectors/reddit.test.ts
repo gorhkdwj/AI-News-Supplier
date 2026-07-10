@@ -88,7 +88,7 @@ describe('redditCollector', () => {
     ]);
   });
 
-  it('토큰 발급 후 hot 게시물을 수집하고 stickied는 제외한다', async () => {
+  it('토큰 발급 후 hot 게시물을 수집하고 stickied·removed 항목은 제외한다', async () => {
     resetRedditTokenCache();
     const requests: StubRequest[] = [];
     const http = stubHttp(
@@ -100,7 +100,8 @@ describe('redditCollector', () => {
     );
     const { items } = await redditCollector.fetch(ctx(http, configWithCreds()));
 
-    expect(items).toHaveLength(1); // pinned(stickied) 제외
+    expect(items).toHaveLength(1);
+    expect(items.map((item) => item.sourceKey)).not.toContain('removed-hot');
     expect(items[0]!.title).toContain('open LLM');
     expect(items[0]!.score).toBe(342);
     expect(items[0]!.type).toBe('community');
@@ -204,6 +205,39 @@ describe('redditCollector', () => {
     expect(requests.some((request) => request.url.includes('/api/info'))).toBe(false);
   });
 
+  it('hot 응답의 tracked removed 게시물은 info 재검증 없이 즉시 삭제 대상으로 반환한다', async () => {
+    resetRedditTokenCache();
+    const config = configWithCreds();
+    config.sources.reddit.subreddits = ['MachineLearning'];
+    const requests: StubRequest[] = [];
+    const http = stubHttp(
+      [
+        { match: 'access_token', body: '{"access_token":"tok","expires_in":3600}' },
+        {
+          match: '/hot?',
+          body: listing,
+          headers: { 'x-ratelimit-remaining': '0' },
+        },
+      ],
+      requests,
+    );
+
+    const result = await redditCollector.fetch(
+      ctx(http, config, [
+        {
+          sourceKey: 'removed-hot',
+          sourceUrl: 'https://www.reddit.com/comments/removed-hot',
+          firstSeenAt: '2026-07-09T00:00:00.000Z',
+          lastSeenAt: '2026-07-09T01:00:00.000Z',
+        },
+      ]),
+    );
+
+    expect(result.items.map((item) => item.sourceKey)).not.toContain('removed-hot');
+    expect(result.deletedSourceKeys).toEqual(['removed-hot']);
+    expect(requests.some((request) => request.url.includes('/api/info'))).toBe(false);
+  });
+
   it('Remaining 헤더 없는 429도 뒤 subreddit 요청을 즉시 중단한다', async () => {
     resetRedditTokenCache();
     const config = configWithCreds();
@@ -265,7 +299,7 @@ describe('redditCollector', () => {
       ],
       requests,
     );
-    const tracked = ['abc', 'gone', 'missing'].map((sourceKey) => ({
+    const tracked = ['abc', 'gone', 'missing', 'removed-hot'].map((sourceKey) => ({
       sourceKey,
       sourceUrl: `https://www.reddit.com/comments/${sourceKey}`,
       firstSeenAt: '2026-07-09T00:00:00.000Z',
@@ -274,13 +308,13 @@ describe('redditCollector', () => {
 
     const result = await redditCollector.fetch(ctx(http, config, tracked));
 
-    expect(result.deletedSourceKeys).toEqual(['gone', 'missing']);
+    expect(result.deletedSourceKeys).toEqual(['removed-hot', 'gone', 'missing']);
     expect(result.items).toEqual([
       expect.objectContaining({ sourceKey: 'abc', score: 400, commentsCount: 100 }),
     ]);
     const infoRequest = requests.find((request) => request.url.includes('/api/info'));
     expect(infoRequest).toMatchObject({
-      url: 'https://oauth.reddit.com/api/info?id=t3_abc,t3_gone,t3_missing&raw_json=1',
+      url: 'https://oauth.reddit.com/api/info?id=t3_abc,t3_gone,t3_missing,t3_removed-hot&raw_json=1',
       headers: {
         'user-agent': 'desktop:ai-news-supplier:v0.0.1 (by /u/fixture-user)',
       },

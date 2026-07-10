@@ -203,6 +203,13 @@ export const redditCollector: Collector = {
     const username = ctx.config.tokens.reddit.username!;
     const userAgent = buildRedditUserAgent(username);
     const posts = new Map<string, RedditPost>();
+    const tracked = [
+      ...new Map(
+        (ctx.trackedSightings ?? []).map((reference) => [reference.sourceKey, reference]),
+      ).values(),
+    ];
+    const trackedKeys = new Set(tracked.map((reference) => reference.sourceKey));
+    const removedHotSourceKeys = new Set<string>();
     let successfulRequests = 0;
     let stopAdditionalRequests = false;
     let rateLimit: RedditRateLimitStatus | undefined;
@@ -242,7 +249,12 @@ export const redditCollector: Collector = {
       }
       successfulRequests++;
       for (const post of listing) {
-        if (!post.stickied && !posts.has(post.id)) posts.set(post.id, post);
+        if (post.stickied) continue;
+        if (isDeletedPost(post)) {
+          if (trackedKeys.has(post.id)) removedHotSourceKeys.add(post.id);
+          continue;
+        }
+        if (!posts.has(post.id)) posts.set(post.id, post);
       }
       if (shouldStopForRateLimit(res, observedRateLimit)) {
         stopAdditionalRequests = true;
@@ -252,12 +264,7 @@ export const redditCollector: Collector = {
     if (successfulRequests === 0) {
       throw new CollectorError('reddit', 'http', 'Reddit subreddit 수집 전체 실패');
     }
-    const deletedSourceKeys: string[] = [];
-    const tracked = [
-      ...new Map(
-        (ctx.trackedSightings ?? []).map((reference) => [reference.sourceKey, reference]),
-      ).values(),
-    ];
+    const deletedSourceKeys = [...removedHotSourceKeys];
     if (!stopAdditionalRequests) {
       for (const chunk of chunks(tracked, 50)) {
         const fullnames = chunk.map((reference) => `t3_${reference.sourceKey}`).join(',');
@@ -302,6 +309,10 @@ export const redditCollector: Collector = {
       }
     }
 
-    return { items: [...posts.values()].map(postToItem), deletedSourceKeys, rateLimit };
+    return {
+      items: [...posts.values()].map(postToItem),
+      deletedSourceKeys: [...new Set(deletedSourceKeys)],
+      rateLimit,
+    };
   },
 };

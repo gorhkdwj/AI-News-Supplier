@@ -16,6 +16,29 @@ interface GitHubRelease {
   author?: { login?: string } | null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isGitHubRelease(value: unknown): value is GitHubRelease {
+  if (!isRecord(value)) return false;
+  const author = value['author'];
+  return (
+    typeof value['id'] === 'number' &&
+    Number.isFinite(value['id']) &&
+    typeof value['tag_name'] === 'string' &&
+    (value['name'] === null || typeof value['name'] === 'string') &&
+    typeof value['html_url'] === 'string' &&
+    (value['body'] === null || typeof value['body'] === 'string') &&
+    typeof value['draft'] === 'boolean' &&
+    typeof value['prerelease'] === 'boolean' &&
+    (value['published_at'] === null || typeof value['published_at'] === 'string') &&
+    (author === undefined ||
+      author === null ||
+      (isRecord(author) && (author['login'] === undefined || typeof author['login'] === 'string')))
+  );
+}
+
 function releaseToSighting(release: GitHubRelease): LiveSightingInput {
   return {
     source: SOURCE,
@@ -70,9 +93,13 @@ export const geminiCliReleaseCollector: Collector = {
 
     let releases: GitHubRelease[];
     try {
-      releases = response.json<GitHubRelease[]>();
-    } catch (error) {
-      throw new CollectorError(SOURCE, 'parse', `Gemini CLI releases 파싱 실패: ${String(error)}`);
+      const parsed = response.json<unknown>();
+      if (!Array.isArray(parsed) || !parsed.every(isGitHubRelease)) {
+        throw new Error('Invalid GitHub releases shape');
+      }
+      releases = parsed;
+    } catch {
+      throw new CollectorError(SOURCE, 'parse', 'Gemini CLI releases 응답 검증 실패');
     }
     return {
       items: releases

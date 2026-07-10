@@ -159,6 +159,11 @@ export const githubCollector: Collector = {
         }
         return repositoryCoordinates(reference.sourceUrl) !== null;
       })
+      .sort(
+        (left, right) =>
+          left.lastSeenAt.localeCompare(right.lastSeenAt) ||
+          left.sourceKey.localeCompare(right.sourceKey),
+      )
       .slice(0, 50);
 
     for (const reference of omitted) {
