@@ -1,8 +1,10 @@
 import type { DB } from '../db/connection.js';
-import type { NewsItem, RankedItem } from '../types.js';
-import { queryRecent, getScoreHistory } from '../store/itemStore.js';
 import { findRecentLearning } from '../store/learningStore.js';
-import { computeHotness } from '../rank.js';
+import { getItemById } from '../store/itemStore.js';
+import { getNearestBaseline } from '../store/sightingStore.js';
+import { queryTrendSightings, type TrendSightingRecord } from '../trends/query.js';
+import { getTrends } from '../trends/service.js';
+import type { NewsItem } from '../types.js';
 import { extractTerms } from './topics.js';
 
 export interface EvidenceBuckets {
@@ -29,12 +31,21 @@ export interface MineOptions {
   now?: Date;
 }
 
+interface StoryEvidence {
+  item: NewsItem;
+  sightings: TrendSightingRecord[];
+  trendScore: number;
+  velocity: number;
+}
+
 interface Cluster {
   normalized: string;
   display: string;
-  items: RankedItem[];
+  stories: StoryEvidence[];
   ids: Set<string>;
 }
+
+const COMMUNITY_SOURCES = new Set(['devto', 'hackernews', 'reddit']);
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
@@ -44,19 +55,127 @@ function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
-/** 항목의 24시간 대비 점수 상승률(velocity)을 계산한다. 이력이 부족하면 0. */
-function itemVelocity(db: DB, item: NewsItem, now: Date): number {
-  if (item.score == null) return 0;
-  const hist = getScoreHistory(db, item.id);
-  if (hist.length < 2) return 0;
-  const dayAgoMs = now.getTime() - 86_400_000;
-  let prevScore: number | null = null;
-  for (const snap of hist) {
-    if (Date.parse(snap.observedAt) <= dayAgoMs) prevScore = snap.score;
+function finiteNumber(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function timestamp(value: string | null): number | null {
+  if (value === null) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function sightingReferenceTime(sighting: TrendSightingRecord): number | null {
+  return timestamp(
+    sighting.type === 'hot_repo'
+      ? (sighting.activityAt ?? sighting.publishedAt ?? sighting.firstSeenAt)
+      : (sighting.publishedAt ?? sighting.firstSeenAt),
+  );
+}
+
+function isVelocitySighting(sighting: TrendSightingRecord): boolean {
+  if (sighting.quality !== 'live') return false;
+  if (sighting.type === 'hot_repo' && sighting.source === 'github') return true;
+  return (
+    COMMUNITY_SOURCES.has(sighting.source) &&
+    (sighting.type === 'community' ||
+      (sighting.source === 'devto' && sighting.type === 'article'))
+  );
+}
+
+/** A Story's velocity is the strongest valid live Community/Repo 24-hour score growth. */
+function storyVelocity(db: DB, sightings: readonly TrendSightingRecord[], now: Date): number {
+  let maximum: number | null = null;
+  for (const sighting of sightings) {
+    if (!isVelocitySighting(sighting) || !finiteNumber(sighting.score)) continue;
+    const baseline = getNearestBaseline(db, sighting.sightingId, now.toISOString(), '24h');
+    if (!finiteNumber(baseline?.score)) continue;
+    const growth = (sighting.score - baseline.score) / Math.max(baseline.score, 1);
+    maximum = maximum === null ? growth : Math.max(maximum, growth);
   }
-  if (prevScore == null) prevScore = hist[0]!.score;
-  const base = Math.max(prevScore ?? 0, 1);
-  return clamp((item.score - (prevScore ?? 0)) / base, 0, 2);
+  return maximum === null ? 0 : clamp(maximum, 0, 2);
+}
+
+function availableStoryScores(
+  db: DB,
+  sinceHours: number,
+  limit: number,
+  now: Date,
+): Map<string, number> {
+  const scores = new Map<string, number>();
+  const views = [
+    { channel: 'community', sort: 'hot' },
+    { channel: 'official', sort: 'important' },
+    { channel: 'repos', sort: 'trending' },
+    { channel: 'research', sort: 'hot' },
+  ] as const;
+  for (const view of views) {
+    const result = getTrends(
+      db,
+      {
+        rankingVersion: 'v2',
+        channel: view.channel,
+        sort: view.sort,
+        sinceHours,
+        limit,
+      },
+      { now },
+    );
+    for (const item of result.items) {
+      if (
+        (item.ranking.coverage !== 'full' && item.ranking.coverage !== 'partial') ||
+        !finiteNumber(item.ranking.score)
+      ) {
+        continue;
+      }
+      const current = scores.get(item.id);
+      if (current === undefined || item.ranking.score > current) {
+        scores.set(item.id, item.ranking.score);
+      }
+    }
+  }
+  return scores;
+}
+
+function recentStoryEvidence(db: DB, sinceDays: number, now: Date): StoryEvidence[] {
+  const allSightings = queryTrendSightings(db);
+  const cutoff = now.getTime() - sinceDays * 86_400_000;
+  const latestRecentTime = new Map<string, number>();
+  const recentSightingsByStory = new Map<string, TrendSightingRecord[]>();
+  for (const sighting of allSightings) {
+    const reference = sightingReferenceTime(sighting);
+    if (reference === null || reference < cutoff) continue;
+    const current = latestRecentTime.get(sighting.storyId);
+    if (current === undefined || reference > current) latestRecentTime.set(sighting.storyId, reference);
+    const storySightings = recentSightingsByStory.get(sighting.storyId);
+    if (storySightings) storySightings.push(sighting);
+    else recentSightingsByStory.set(sighting.storyId, [sighting]);
+  }
+
+  const storyIds = [...latestRecentTime]
+    .sort(
+      ([leftId, leftTime], [rightId, rightTime]) =>
+        rightTime - leftTime || leftId.localeCompare(rightId),
+    )
+    .slice(0, 1000)
+    .map(([storyId]) => storyId);
+
+  const sinceHours = Math.max(1, Math.ceil(sinceDays * 24));
+  const rankingLimit = Math.max(1, allSightings.length);
+  const scores = availableStoryScores(db, sinceHours, rankingLimit, now);
+  const evidence: StoryEvidence[] = [];
+  for (const storyId of storyIds) {
+    const item = getItemById(db, storyId);
+    const sightings = recentSightingsByStory.get(storyId) ?? [];
+    if (item === null || sightings.length === 0) continue;
+    evidence.push({
+      item,
+      sightings,
+      trendScore: scores.get(storyId) ?? 0,
+      velocity: storyVelocity(db, sightings, now),
+    });
+  }
+  return evidence;
 }
 
 export function bucketEvidence(items: NewsItem[]): EvidenceBuckets {
@@ -70,34 +189,48 @@ export function bucketEvidence(items: NewsItem[]): EvidenceBuckets {
   return buckets;
 }
 
-/** 아이템 집합 겹침(작은 쪽 기준)이 threshold 이상인 클러스터를 병합한다. */
+/** Merge term clusters when at least `threshold` of the smaller Story set overlaps. */
 function mergeClusters(clusters: Cluster[], threshold: number): Cluster[] {
-  const sorted = [...clusters].sort((a, b) => b.items.length - a.items.length);
+  const sorted = [...clusters].sort((a, b) => b.stories.length - a.stories.length);
   const merged: Cluster[] = [];
-  for (const c of sorted) {
+  for (const cluster of sorted) {
     let absorbed = false;
-    for (const m of merged) {
+    for (const target of merged) {
       let overlap = 0;
-      for (const id of c.ids) if (m.ids.has(id)) overlap++;
-      const minSize = Math.min(c.ids.size, m.ids.size);
+      for (const id of cluster.ids) if (target.ids.has(id)) overlap += 1;
+      const minSize = Math.min(cluster.ids.size, target.ids.size);
       if (minSize > 0 && overlap / minSize >= threshold) {
-        for (const it of c.items) {
-          if (!m.ids.has(it.id)) {
-            m.items.push(it);
-            m.ids.add(it.id);
+        for (const story of cluster.stories) {
+          if (!target.ids.has(story.item.id)) {
+            target.stories.push(story);
+            target.ids.add(story.item.id);
           }
         }
         absorbed = true;
         break;
       }
     }
-    if (!absorbed) merged.push({ ...c, items: [...c.items], ids: new Set(c.ids) });
+    if (!absorbed) {
+      merged.push({
+        ...cluster,
+        stories: [...cluster.stories],
+        ids: new Set(cluster.ids),
+      });
+    }
   }
   return merged;
 }
 
+function compareStoryEvidence(left: StoryEvidence, right: StoryEvidence): number {
+  if (left.trendScore !== right.trendScore) return right.trendScore - left.trendScore;
+  const byPublished =
+    (timestamp(right.item.publishedAt ?? right.item.firstSeenAt) ?? 0) -
+    (timestamp(left.item.publishedAt ?? left.item.firstSeenAt) ?? 0);
+  return byPublished !== 0 ? byPublished : left.item.id.localeCompare(right.item.id);
+}
+
 /**
- * 최근 항목에서 학습 가치가 높은 토픽 클러스터를 발굴한다.
+ * Finds topic clusters worth learning from v2 Story-level ranking evidence.
  * learnScore = novelty × (2×sourceSpread + hotSum + velocity + ln(1+itemCount))
  */
 export function mineLearningCandidates(db: DB, opts: MineOptions = {}): LearningCandidate[] {
@@ -107,44 +240,55 @@ export function mineLearningCandidates(db: DB, opts: MineOptions = {}): Learning
   const includeLearned = opts.includeLearned ?? false;
   const relearnAfterDays = opts.relearnAfterDays ?? 90;
 
-  const items = queryRecent(db, { sinceHours: sinceDays * 24, limit: 1000 });
-  const ranked = computeHotness(items, now);
+  const stories = recentStoryEvidence(db, sinceDays, now);
 
-  // 용어별 클러스터 구성
   const clusters = new Map<string, Cluster>();
-  for (const item of ranked) {
-    for (const term of extractTerms(item.title, item.tags)) {
+  for (const story of stories) {
+    const terms = new Map<string, { normalized: string; display: string }>();
+    for (const sighting of story.sightings) {
+      for (const term of extractTerms(sighting.title, sighting.tags)) {
+        if (!terms.has(term.normalized)) terms.set(term.normalized, term);
+      }
+    }
+    for (const term of terms.values()) {
       let cluster = clusters.get(term.normalized);
       if (!cluster) {
-        cluster = { normalized: term.normalized, display: term.display, items: [], ids: new Set() };
+        cluster = {
+          normalized: term.normalized,
+          display: term.display,
+          stories: [],
+          ids: new Set(),
+        };
         clusters.set(term.normalized, cluster);
       }
-      if (!cluster.ids.has(item.id)) {
-        cluster.items.push(item);
-        cluster.ids.add(item.id);
+      if (!cluster.ids.has(story.item.id)) {
+        cluster.stories.push(story);
+        cluster.ids.add(story.item.id);
       }
     }
   }
 
   const merged = mergeClusters([...clusters.values()], 0.6);
-
   const candidates: LearningCandidate[] = [];
   for (const cluster of merged) {
-    const sources = new Set(cluster.items.map((i) => i.source));
+    const sources = new Set(
+      cluster.stories.flatMap((story) => story.sightings.map((sighting) => sighting.source)),
+    );
     const sourceSpread = sources.size;
-    const itemCount = cluster.items.length;
+    const itemCount = cluster.stories.length;
+    const velocity = round3(
+      cluster.stories.reduce((maximum, story) => Math.max(maximum, story.velocity), 0),
+    );
 
-    // 채택 필터
-    if (!(sourceSpread >= 2 || (itemCount >= 3 && avgVelocity(db, cluster.items, now) > 0.5))) {
-      continue;
-    }
+    if (!(sourceSpread >= 2 || (itemCount >= 3 && velocity > 0.5))) continue;
 
-    const velocity = round3(avgVelocity(db, cluster.items, now));
-    const topFive = [...cluster.items].sort((a, b) => b.hotness - a.hotness).slice(0, 5);
-    const hotSum = round3(topFive.reduce((s, i) => s + i.hotness, 0));
+    const ordered = [...cluster.stories].sort(compareStoryEvidence);
+    const hotSum = round3(
+      ordered.slice(0, 5).reduce((sum, story) => sum + story.trendScore, 0),
+    );
 
     const recent = findRecentLearning(db, cluster.normalized);
-    let novelty = 1.0;
+    let novelty = 1;
     if (recent) {
       const daysSince = (now.getTime() - Date.parse(recent.learnedAt)) / 86_400_000;
       novelty = daysSince <= relearnAfterDays ? 0.15 : 0.5;
@@ -154,7 +298,6 @@ export function mineLearningCandidates(db: DB, opts: MineOptions = {}): Learning
     const learnScore = round3(
       novelty * (2 * sourceSpread + hotSum + velocity + Math.log(1 + itemCount)),
     );
-
     const whyParts = [`${sourceSpread}개 소스에서 등장`, `항목 ${itemCount}개`];
     if (velocity > 0.5) whyParts.push('최근 화제 급상승');
     if (novelty < 1) whyParts.push('과거 학습 이력 있음(복습)');
@@ -165,16 +308,9 @@ export function mineLearningCandidates(db: DB, opts: MineOptions = {}): Learning
       learnScore,
       signals: { sourceSpread, velocity, itemCount, hotSum },
       why: whyParts.join(' · '),
-      evidence: bucketEvidence(topFive),
+      evidence: bucketEvidence(ordered.map((story) => story.item)),
     });
   }
 
   return candidates.sort((a, b) => b.learnScore - a.learnScore).slice(0, limit);
-}
-
-function avgVelocity(db: DB, items: NewsItem[], now: Date): number {
-  const scored = items.filter((i) => i.score != null);
-  if (scored.length === 0) return 0;
-  const sum = scored.reduce((s, i) => s + itemVelocity(db, i, now), 0);
-  return sum / scored.length;
 }
