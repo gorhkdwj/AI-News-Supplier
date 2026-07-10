@@ -1,19 +1,16 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import type { DB } from '../core/db/connection.js';
 import type { ResolvedConfig } from '../core/config.js';
 import { refreshStale } from '../core/refresh.js';
-import {
-  queryRecent,
-  searchItems,
-  getItemById,
-  countItemsBySource,
-  getScoreHistory,
-} from '../core/store/itemStore.js';
+import { searchItems, countItemsBySource } from '../core/store/itemStore.js';
 import { getSourceState } from '../core/store/fetchLog.js';
-import { computeHotness, interleaveBySource } from '../core/rank.js';
 import { allCollectors } from '../collectors/registry.js';
-import { ITEM_TYPES, type ItemType, type NewsItem, type RankedItem } from '../core/types.js';
+import { ITEM_TYPES, type ItemType, type NewsItem } from '../core/types.js';
+import { TrendInputError, resolveTrendRequest } from '../core/trends/request.js';
+import { serializeSighting, serializeTrendResult } from '../core/trends/serialize.js';
+import { getTrendItemDetail, getTrends } from '../core/trends/service.js';
 import { mineLearningCandidates, type EvidenceBuckets } from '../core/learning/candidates.js';
 import { designLearningSession } from '../core/learning/session.js';
 import { recordLearning, getLearningHistory } from '../core/store/learningStore.js';
@@ -29,21 +26,6 @@ function jsonResult(data: Record<string, unknown>) {
   return {
     content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
     structuredContent: data,
-  };
-}
-
-function toTrendItem(it: RankedItem) {
-  return {
-    id: it.id,
-    source: it.source,
-    type: it.type,
-    title: it.title,
-    url: it.url,
-    summary: it.summary,
-    score: it.score,
-    hotness: it.hotness,
-    published_at: it.publishedAt,
-    tags: it.tags,
   };
 }
 
@@ -71,6 +53,9 @@ function bucketsToBrief(b: EvidenceBuckets) {
 }
 
 const levelEnum = z.enum(['beginner', 'intermediate', 'advanced']);
+const rankingVersionEnum = z.enum(['legacy', 'v2']);
+const channelEnum = z.enum(['overview', 'community', 'official', 'repos', 'research']);
+const sortEnum = z.enum(['briefing', 'hot', 'latest', 'important', 'trending', 'discovery']);
 
 /** 데이터 조회/수집 MCP 도구 5종을 등록한다. */
 export function registerTools(server: McpServer, deps: McpDeps): void {
@@ -86,19 +71,35 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
         sources: z.array(z.string()).optional(),
         types: z.array(typeEnum).optional(),
         since_hours: z.number().int().positive().optional(),
+        ranking_version: rankingVersionEnum.optional(),
+        channel: channelEnum.optional(),
+        sort: sortEnum.optional(),
       },
     },
     async (args) => {
-      await refreshStale(db, config, { sources: args.sources });
-      const items = queryRecent(db, {
-        sinceHours: args.since_hours ?? 72,
+      const input = {
+        rankingVersion: args.ranking_version,
+        channel: args.channel,
+        sort: args.sort,
         sources: args.sources,
         types: args.types,
-        limit: 500,
-      });
-      const ranked = computeHotness(items, new Date());
-      const top = interleaveBySource(ranked, args.limit ?? 20, config.maxPerSourceRatio);
-      return jsonResult({ items: top.map(toTrendItem) });
+        sinceHours: args.since_hours,
+        limit: args.limit,
+      };
+      try {
+        const request = resolveTrendRequest(input);
+        await refreshStale(db, config, { sources: request.sources });
+        return jsonResult(
+          serializeTrendResult(
+            getTrends(db, request, { maxPerSourceRatio: config.maxPerSourceRatio }),
+          ),
+        );
+      } catch (error) {
+        if (error instanceof TrendInputError) {
+          throw new McpError(ErrorCode.InvalidParams, error.message);
+        }
+        throw error;
+      }
     },
   );
 
@@ -131,9 +132,14 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
       inputSchema: { id: z.string().min(1) },
     },
     (args) => {
-      const item = getItemById(db, args.id);
-      if (!item) return jsonResult({ found: false });
-      return jsonResult({ found: true, item, score_history: getScoreHistory(db, args.id) });
+      const detail = getTrendItemDetail(db, args.id);
+      if (!detail.found) return jsonResult({ found: false });
+      return jsonResult({
+        found: true,
+        item: detail.item,
+        score_history: detail.scoreHistory,
+        sightings: detail.sightings.map(serializeSighting),
+      });
     },
   );
 

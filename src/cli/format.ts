@@ -1,4 +1,5 @@
-import type { NewsItem, RankedItem } from '../core/types.js';
+import type { NewsItem } from '../core/types.js';
+import type { TrendResult, TrendResultItem } from '../core/trends/service.js';
 import type { SourceRefreshResult } from '../core/refresh.js';
 import type { LearningCandidate } from '../core/learning/candidates.js';
 import type { LearningSession } from '../core/learning/session.js';
@@ -18,28 +19,47 @@ function dateOnly(iso: string | null): string {
   return iso ? iso.slice(0, 10) : '-';
 }
 
-function scoreLabel(item: NewsItem): string {
-  return item.score != null ? `★${item.score}` : '—';
+function scoreLabel(item: TrendResultItem): string {
+  return item.score != null ? `${item.scoreKind ?? 'score'} ${item.score}` : '—';
 }
 
-export function formatTrends(items: RankedItem[]): string {
-  if (items.length === 0) return '표시할 트렌드가 없습니다. `ains fetch`로 먼저 수집해 보십시오.';
+const SECTION_LABELS = {
+  overview: 'Overview',
+  community: 'Community',
+  official: 'Official',
+  repos: 'Repos',
+  research: 'Research',
+} as const;
+
+export function formatTrends(result: TrendResult): string {
   const lines: string[] = [];
-  items.forEach((it, i) => {
-    const idx = String(i + 1).padStart(2, ' ');
-    lines.push(
-      `${idx}. [${it.source} · ${it.type} · ${scoreLabel(it)}] ${it.title}`,
-    );
-    lines.push(`    ${it.url}`);
-    lines.push(`    hotness ${it.hotness} · ${dateOnly(it.publishedAt)} · id ${it.id}`);
-  });
+  for (const section of result.sections) {
+    if (lines.length > 0) lines.push('');
+    lines.push(`${SECTION_LABELS[section.channel]} · ${section.sort}`);
+    if (section.items.length === 0) {
+      lines.push('  표시할 항목이 없습니다.');
+      continue;
+    }
+    section.items.forEach((it) => {
+      const idx = String(it.ranking.position).padStart(2, ' ');
+      lines.push(`${idx}. [${it.source} · ${it.type} · ${scoreLabel(it)}] ${it.title}`);
+      lines.push(`    ${it.url}`);
+      lines.push(
+        `    ${it.ranking.kind} · score ${it.ranking.score ?? '—'} · coverage ${it.ranking.coverage}`,
+      );
+      lines.push(`    ${dateOnly(it.publishedAt)} · id ${it.id}`);
+    });
+  }
   return lines.join('\n');
 }
 
 export function formatSearchResults(items: NewsItem[]): string {
   if (items.length === 0) return '검색 결과가 없습니다.';
   return items
-    .map((it, i) => `${String(i + 1).padStart(2, ' ')}. [${it.source}] ${it.title}\n    ${it.url}\n    id ${it.id}`)
+    .map(
+      (it, i) =>
+        `${String(i + 1).padStart(2, ' ')}. [${it.source}] ${it.title}\n    ${it.url}\n    id ${it.id}`,
+    )
     .join('\n');
 }
 
