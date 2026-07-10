@@ -3,6 +3,7 @@
     "children": [
       {
         "data": {
+          "id": "abc",
           "title": "New open LLM beats GPT on benchmarks",
           "url": "https://example.com/new-llm",
           "permalink": "/r/LocalLLaMA/comments/abc/new_open_llm/",
@@ -17,6 +18,7 @@
       },
       {
         "data": {
+          "id": "xyz",
           "title": "Weekly discussion thread (pinned)",
           "url": "https://www.reddit.com/r/MachineLearning/pinned",
           "permalink": "/r/MachineLearning/comments/xyz/weekly/",

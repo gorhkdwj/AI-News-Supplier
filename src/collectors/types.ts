@@ -2,7 +2,7 @@ import type { ResolvedConfig } from '../core/config.js';
 import type { HttpClient } from '../core/http.js';
 import type { Logger } from '../core/logger.js';
 import type { SourceState } from '../core/store/fetchLog.js';
-import type { CollectedItem } from '../core/types.js';
+import type { LiveSightingInput } from '../core/types.js';
 
 export interface FetchContext {
   config: ResolvedConfig;
@@ -15,7 +15,7 @@ export interface FetchContext {
 }
 
 export interface CollectorResult {
-  items: CollectedItem[];
+  items: LiveSightingInput[];
   /** 304 등으로 변경 없음일 때 true. items는 무시된다. */
   notModified?: boolean;
   etag?: string | null;

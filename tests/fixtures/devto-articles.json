@@ -1,0 +1,13 @@
+[
+  {
+    "id": 12345,
+    "title": "Building reliable LLM agents",
+    "url": "https://dev.to/example/building-reliable-llm-agents",
+    "description": "Patterns for production AI agents.",
+    "positive_reactions_count": 42,
+    "comments_count": 7,
+    "published_at": "2026-07-09T09:30:00Z",
+    "tag_list": ["ai", "llm"],
+    "user": { "name": "Example Author" }
+  }
+]

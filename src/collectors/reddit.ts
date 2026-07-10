@@ -1,7 +1,8 @@
-import type { CollectedItem } from '../core/types.js';
+import type { LiveSightingInput } from '../core/types.js';
 import { CollectorError, type Collector, type FetchContext } from './types.js';
 
 interface RedditPost {
+  id: string;
   title: string;
   url: string;
   permalink: string;
@@ -51,19 +52,25 @@ async function getAccessToken(ctx: FetchContext): Promise<string> {
   return data.access_token;
 }
 
-function postToItem(p: RedditPost): CollectedItem {
+function postToItem(p: RedditPost): LiveSightingInput {
+  const publishedAt = p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null;
   return {
     source: 'reddit',
+    sourceKey: p.id,
     type: 'community',
     title: p.title,
     url: p.url || `https://www.reddit.com${p.permalink}`,
+    discussionUrl: new URL(p.permalink, 'https://www.reddit.com').toString(),
     summary: p.selftext ? p.selftext.slice(0, 2000) : null,
     author: p.author ?? null,
     score: p.ups ?? null,
+    scoreKind: 'upvotes',
     commentsCount: p.num_comments ?? null,
     tags: [`r/${p.subreddit}`],
-    publishedAt: p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null,
-    raw: { permalink: p.permalink },
+    publishedAt,
+    publishedPrecision: publishedAt === null ? 'inferred' : 'exact_time',
+    activityAt: null,
+    raw: { id: p.id, permalink: p.permalink },
   };
 }
 
@@ -75,7 +82,7 @@ export const redditCollector: Collector = {
     config.sources.reddit.enabled &&
     Boolean(config.tokens.reddit.clientId) &&
     Boolean(config.tokens.reddit.clientSecret),
-  async fetch(ctx: FetchContext): Promise<{ items: CollectedItem[] }> {
+  async fetch(ctx: FetchContext): Promise<{ items: LiveSightingInput[] }> {
     const token = await getAccessToken(ctx);
     const subs = ctx.config.sources.reddit.subreddits.join('+');
     const url = `https://oauth.reddit.com/r/${subs}/hot?limit=50`;

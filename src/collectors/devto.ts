@@ -1,4 +1,4 @@
-import type { CollectedItem } from '../core/types.js';
+import type { LiveSightingInput } from '../core/types.js';
 import { isAiRelevant } from './keywords.js';
 import { CollectorError, type Collector, type FetchContext } from './types.js';
 
@@ -22,18 +22,23 @@ function toTags(tagList: string[] | string): string[] {
     .filter(Boolean);
 }
 
-function articleToItem(a: DevtoArticle): CollectedItem {
+function articleToItem(a: DevtoArticle): LiveSightingInput {
   return {
     source: 'devto',
+    sourceKey: String(a.id),
     type: 'article',
     title: a.title,
     url: a.url,
+    discussionUrl: null,
     summary: a.description,
     author: a.user?.name ?? null,
     score: a.positive_reactions_count,
+    scoreKind: 'reactions',
     commentsCount: a.comments_count,
     tags: toTags(a.tag_list),
     publishedAt: a.published_at,
+    publishedPrecision: a.published_at === null ? 'inferred' : 'exact_time',
+    activityAt: null,
     raw: { id: a.id },
   };
 }
@@ -42,9 +47,9 @@ export const devtoCollector: Collector = {
   name: 'devto',
   defaultTtlMinutes: 180,
   isEnabled: (config) => config.sources.devto.enabled,
-  async fetch(ctx: FetchContext): Promise<{ items: CollectedItem[] }> {
+  async fetch(ctx: FetchContext): Promise<{ items: LiveSightingInput[] }> {
     const { tags, minReactions } = ctx.config.sources.devto;
-    const seen = new Map<number, CollectedItem>();
+    const seen = new Map<number, LiveSightingInput>();
 
     for (const tag of tags) {
       const url = `https://dev.to/api/articles?tag=${encodeURIComponent(tag)}&top=7&per_page=30`;

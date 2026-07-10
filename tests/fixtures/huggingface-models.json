@@ -1,0 +1,11 @@
+[
+  {
+    "id": "example/model-one",
+    "likes": 88,
+    "downloads": 1000,
+    "pipeline_tag": "text-generation",
+    "trendingScore": 12,
+    "createdAt": "2026-07-08T10:00:00Z",
+    "tags": ["llm"]
+  }
+]

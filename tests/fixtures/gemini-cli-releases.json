@@ -1,0 +1,35 @@
+[
+  {
+    "id": 7001,
+    "tag_name": "v1.2.0",
+    "name": "Gemini CLI 1.2.0",
+    "html_url": "https://github.com/google-gemini/gemini-cli/releases/tag/v1.2.0",
+    "body": "Stable agent workflow improvements.",
+    "draft": false,
+    "prerelease": false,
+    "published_at": "2026-07-09T12:00:00Z",
+    "author": { "login": "gemini-cli-bot" }
+  },
+  {
+    "id": 7002,
+    "tag_name": "v1.3.0-preview",
+    "name": "Gemini CLI preview",
+    "html_url": "https://github.com/google-gemini/gemini-cli/releases/tag/v1.3.0-preview",
+    "body": "Preview release.",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-07-10T12:00:00Z",
+    "author": { "login": "gemini-cli-bot" }
+  },
+  {
+    "id": 7003,
+    "tag_name": "v2.0.0-draft",
+    "name": "Gemini CLI draft",
+    "html_url": "https://github.com/google-gemini/gemini-cli/releases/tag/v2.0.0-draft",
+    "body": "Draft release.",
+    "draft": true,
+    "prerelease": false,
+    "published_at": null,
+    "author": { "login": "gemini-cli-bot" }
+  }
+]

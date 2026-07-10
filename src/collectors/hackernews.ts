@@ -1,4 +1,4 @@
-import type { CollectedItem } from '../core/types.js';
+import type { LiveSightingInput } from '../core/types.js';
 import { isAiRelevant } from './keywords.js';
 import { CollectorError, type Collector, type FetchContext } from './types.js';
 
@@ -21,25 +21,32 @@ interface HnSearchResponse {
 const QUERIES = ['AI', 'LLM', 'GPT', 'AI agent', 'open source model'];
 const WINDOW_HOURS = 72;
 
-function hitToItem(hit: HnHit, extraKeywords: readonly string[]): CollectedItem | null {
+function hitToItem(hit: HnHit, extraKeywords: readonly string[]): LiveSightingInput | null {
   if (!hit.title) return null;
   const haystack = `${hit.title} ${hit.story_text ?? ''}`;
   if (!isAiRelevant(haystack, extraKeywords)) return null;
 
   const url = hit.url ?? `https://news.ycombinator.com/item?id=${hit.objectID}`;
-  const publishedAt = hit.created_at ?? (hit.created_at_i != null ? new Date(hit.created_at_i * 1000).toISOString() : null);
+  const publishedAt =
+    hit.created_at ??
+    (hit.created_at_i != null ? new Date(hit.created_at_i * 1000).toISOString() : null);
 
   return {
     source: 'hackernews',
+    sourceKey: hit.objectID,
     type: 'community',
     title: hit.title,
     url,
+    discussionUrl: `https://news.ycombinator.com/item?id=${encodeURIComponent(hit.objectID)}`,
     summary: hit.story_text ?? null,
     author: hit.author,
     score: hit.points,
+    scoreKind: 'points',
     commentsCount: hit.num_comments,
     tags: [],
     publishedAt,
+    publishedPrecision: publishedAt === null ? 'inferred' : 'exact_time',
+    activityAt: null,
     raw: {
       objectID: hit.objectID,
       points: hit.points,
@@ -52,10 +59,10 @@ export const hackernewsCollector: Collector = {
   name: 'hackernews',
   defaultTtlMinutes: 30,
   isEnabled: (config) => config.sources.hackernews.enabled,
-  async fetch(ctx: FetchContext): Promise<{ items: CollectedItem[] }> {
+  async fetch(ctx: FetchContext): Promise<{ items: LiveSightingInput[] }> {
     const minPoints = ctx.config.sources.hackernews.minPoints;
     const sinceI = Math.floor((ctx.now.getTime() - WINDOW_HOURS * 3_600_000) / 1000);
-    const seen = new Map<string, CollectedItem>();
+    const seen = new Map<string, LiveSightingInput>();
 
     for (const q of QUERIES) {
       // HN Algolia는 points를 numericFilters로 지원하지 않는다(400). 시간만 필터하고

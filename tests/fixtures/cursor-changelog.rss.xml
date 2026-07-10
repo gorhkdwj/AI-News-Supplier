@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Cursor Changelog</title>
+    <link>https://cursor.com/changelog</link>
+    <description>Cursor updates</description>
+    <item>
+      <title>Background agents</title>
+      <link>https://cursor.com/changelog/background-agents</link>
+      <guid isPermaLink="false">cursor-background-agents</guid>
+      <pubDate>Thu, 09 Jul 2026 12:00:00 GMT</pubDate>
+      <description>New agent controls.</description>
+      <category>agent</category>
+    </item>
+  </channel>
+</rss>

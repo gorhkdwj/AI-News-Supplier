@@ -45,5 +45,13 @@ describe('redditCollector', () => {
     expect(items[0]!.score).toBe(342);
     expect(items[0]!.type).toBe('community');
     expect(items[0]!.tags).toEqual(['r/LocalLLaMA']);
+    expect(items[0]).toMatchObject({
+      sourceKey: 'abc',
+      url: 'https://example.com/new-llm',
+      discussionUrl: 'https://www.reddit.com/r/LocalLLaMA/comments/abc/new_open_llm/',
+      scoreKind: 'upvotes',
+      activityAt: null,
+      publishedPrecision: 'exact_time',
+    });
   });
 });

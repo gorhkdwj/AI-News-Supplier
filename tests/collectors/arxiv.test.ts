@@ -7,10 +7,19 @@ import { defaultConfig } from '../../src/core/config.js';
 import { logger } from '../../src/core/logger.js';
 import { stubHttp } from '../helpers/stubHttp.js';
 
-const xml = readFileSync(fileURLToPath(new URL('../fixtures/arxiv.atom.xml', import.meta.url)), 'utf8');
+const xml = readFileSync(
+  fileURLToPath(new URL('../fixtures/arxiv.atom.xml', import.meta.url)),
+  'utf8',
+);
 
 function ctx(http: FetchContext['http']): FetchContext {
-  return { config: defaultConfig(), http, state: null, log: logger, now: new Date('2026-07-09T12:00:00Z') };
+  return {
+    config: defaultConfig(),
+    http,
+    state: null,
+    log: logger,
+    now: new Date('2026-07-09T12:00:00Z'),
+  };
 }
 
 describe('arxivCollector', () => {
@@ -27,6 +36,13 @@ describe('arxivCollector', () => {
     expect(moe.tags).toEqual(['cs.LG', 'cs.AI']);
     expect(moe.author).toBe('Jane Doe'); // 첫 저자
     expect(moe.publishedAt).toBe('2026-07-07T17:59:50Z');
+    expect(moe).toMatchObject({
+      sourceKey: '2607.06565',
+      discussionUrl: null,
+      scoreKind: null,
+      activityAt: null,
+      publishedPrecision: 'exact_time',
+    });
   });
 
   it('단일 저자/카테고리 항목도 배열로 정규화한다', async () => {

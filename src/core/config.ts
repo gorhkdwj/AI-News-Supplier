@@ -9,6 +9,17 @@ export const DEFAULT_FEEDS = [
   { id: 'deepmind', title: 'Google DeepMind', url: 'https://deepmind.google/blog/rss.xml' },
   { id: 'googleai', title: 'Google AI Blog', url: 'https://blog.google/technology/ai/rss/' },
   { id: 'hfblog', title: 'Hugging Face Blog', url: 'https://huggingface.co/blog/feed.xml' },
+  {
+    id: 'claude-code',
+    title: 'Claude Code Changelog',
+    url: 'https://raw.githubusercontent.com/anthropics/claude-code/main/feed.xml',
+  },
+  { id: 'cursor', title: 'Cursor Changelog', url: 'https://cursor.com/changelog/rss.xml' },
+  {
+    id: 'figma',
+    title: 'Figma Release Notes',
+    url: 'https://www.figma.com/release-notes/feed/atom.xml',
+  },
 ];
 
 const RssFeedSchema = z.object({

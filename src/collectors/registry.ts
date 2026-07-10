@@ -1,6 +1,7 @@
 import type { ResolvedConfig } from '../core/config.js';
 import { hackernewsCollector } from './hackernews.js';
 import { githubCollector } from './github.js';
+import { geminiCliReleaseCollector } from './githubRelease.js';
 import { huggingfaceCollector } from './huggingface.js';
 import { arxivCollector } from './arxiv.js';
 import { devtoCollector } from './devto.js';
@@ -12,6 +13,7 @@ import type { Collector } from './types.js';
 export const STATIC_COLLECTORS: Collector[] = [
   hackernewsCollector,
   githubCollector,
+  geminiCliReleaseCollector,
   huggingfaceCollector,
   arxivCollector,
   devtoCollector,

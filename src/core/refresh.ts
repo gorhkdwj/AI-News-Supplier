@@ -2,7 +2,8 @@ import type { ResolvedConfig } from './config.js';
 import type { DB } from './db/connection.js';
 import { createHttpClient, type HttpClient } from './http.js';
 import { logger } from './logger.js';
-import { upsertItems, purgeOld } from './store/itemStore.js';
+import { purgeOld } from './store/itemStore.js';
+import { purgeMetricSnapshots, upsertSightings } from './store/sightingStore.js';
 import {
   getSourceState,
   insertFetchLog,
@@ -41,7 +42,11 @@ const BACKOFF_FAILURE_THRESHOLD = 3;
 const BACKOFF_MULTIPLIER = 4;
 
 function getConfiguredTtl(config: ResolvedConfig, sourceName: string): number {
-  const key = sourceName.startsWith('rss:') ? 'rss' : sourceName;
+  const key = sourceName.startsWith('rss:')
+    ? 'rss'
+    : sourceName.startsWith('github_release:')
+      ? 'github'
+      : sourceName;
   const sources = config.sources as Record<string, { ttlMinutes?: number } | undefined>;
   return sources[key]?.ttlMinutes ?? config.defaultTtlMinutes;
 }
@@ -123,7 +128,7 @@ async function refreshOne(
       return { source: collector.name, status: 'not_modified', itemsFound: 0, itemsNew: 0 };
     }
 
-    const { found, created } = upsertItems(db, result.items, nowIso);
+    const { found, created } = upsertSightings(db, result.items, nowIso);
     markSuccess(db, collector.name, {
       now: nowIso,
       etag: result.etag,
@@ -190,6 +195,10 @@ export async function refreshStale(
   const concurrency = opts.concurrency ?? 4;
 
   // 수집 시작 시 보존 정책을 적용한다(오래된 항목/로그 정리).
+  const purgedSnapshots = purgeMetricSnapshots(db, now.toISOString());
+  if (purgedSnapshots > 0) {
+    logger.info(`보존 정책: 오래된 metric snapshot ${purgedSnapshots}건 정리`);
+  }
   if (config.retentionDays != null) {
     const purged = purgeOld(db, config.retentionDays);
     if (purged > 0) logger.info(`보존 정책: 오래된 항목 ${purged}건 정리`);

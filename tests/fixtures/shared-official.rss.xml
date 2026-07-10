@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Shared Official Feed</title>
+    <link>https://openai.com/news</link>
+    <description>Official updates</description>
+    <item>
+      <title>GPT-5 released with new agent features</title>
+      <link>https://openai.com/index/gpt-5?utm_source=official</link>
+      <guid isPermaLink="false">official-gpt-5</guid>
+      <pubDate>Thu, 09 Jul 2026 00:00:00 GMT</pubDate>
+      <description>Official GPT-5 announcement.</description>
+    </item>
+  </channel>
+</rss>

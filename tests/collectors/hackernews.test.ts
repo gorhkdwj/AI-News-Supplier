@@ -14,7 +14,13 @@ const hnFixture = readFileSync(
 );
 
 function ctx(http: FetchContext['http']): FetchContext {
-  return { config: defaultConfig(), http, state: null, log: logger, now: new Date('2026-07-09T12:00:00Z') };
+  return {
+    config: defaultConfig(),
+    http,
+    state: null,
+    log: logger,
+    now: new Date('2026-07-09T12:00:00Z'),
+  };
 }
 
 describe('hackernewsCollector', () => {
@@ -31,6 +37,13 @@ describe('hackernewsCollector', () => {
     expect(gpt!.score).toBe(500);
     expect(gpt!.commentsCount).toBe(210);
     expect(gpt!.publishedAt).toBe('2026-07-09T00:00:00.000Z');
+    expect(gpt).toMatchObject({
+      sourceKey: '100',
+      discussionUrl: 'https://news.ycombinator.com/item?id=100',
+      scoreKind: 'points',
+      activityAt: null,
+      publishedPrecision: 'exact_time',
+    });
   });
 
   it('URL이 없는 Ask HN 항목은 HN 아이템 링크로 대체한다', async () => {
