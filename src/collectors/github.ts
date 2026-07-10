@@ -106,9 +106,11 @@ export const githubCollector: Collector = {
     const token = ctx.config.tokens.github;
     if (token) headers['authorization'] = `Bearer ${token}`;
 
+    const aiTerms = '(ai OR llm OR gpt OR rag OR agentic)';
+    const fourteenDaysAgo = dateDaysAgo(ctx.now, 14);
     const queries = [
-      `topic:llm topic:ai created:>${dateDaysAgo(ctx.now, 14)}`,
-      `(llm OR "ai agent" OR rag) in:name,description pushed:>${dateDaysAgo(ctx.now, 7)} stars:>100`,
+      `${aiTerms} in:name,description,topics created:>=${fourteenDaysAgo}`,
+      `${aiTerms} in:name,description,topics pushed:>=${fourteenDaysAgo} stars:>=100`,
     ];
 
     const seen = new Map<number, LiveSightingInput>();

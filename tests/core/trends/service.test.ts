@@ -224,20 +224,36 @@ describe('core trend service', () => {
     });
   });
 
-  it('emits one Story per channel and retains alternate same-channel Sightings in signals', () => {
+  it('selects the highest-scoring Sighting before diversity and uses it for community echo', () => {
     const connection = db();
     const url = 'https://example.com/shared-community';
     upsertSightings(
       connection,
       [
-        live({ source: 'hackernews', sourceKey: 'same-hn', url, score: 40 }),
+        live({
+          source: 'hackernews',
+          sourceKey: 'higher-hn-story',
+          url: 'https://example.com/higher-hn-story',
+          score: 10_000,
+        }),
+        live({ source: 'hackernews', sourceKey: 'same-hn', url, score: 100 }),
         live({
           source: 'reddit',
           sourceKey: 'same-reddit',
           url,
-          score: 80,
+          score: 1,
           scoreKind: 'upvotes',
           discussionUrl: 'https://reddit.com/r/test/comments/same',
+        }),
+        live({
+          source: 'rss:vendor',
+          sourceKey: 'same-official',
+          type: 'official_update',
+          title: 'Shared community API release',
+          url,
+          score: null,
+          scoreKind: null,
+          commentsCount: null,
         }),
       ],
       NOW.toISOString(),
@@ -249,11 +265,18 @@ describe('core trend service', () => {
       { now: NOW },
     );
 
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]!.id).toBe(itemId(url));
-    expect(result.items[0]!.ranking.signals.alternate_sightings).toEqual([
-      expect.objectContaining({ channel: 'community', source: 'hackernews' }),
+    const shared = result.items.find((item) => item.id === itemId(url));
+    expect(shared).toMatchObject({ source: 'hackernews' });
+    expect(shared!.ranking.signals.alternate_sightings).toEqual([
+      expect.objectContaining({ channel: 'community', source: 'reddit' }),
     ]);
+
+    const official = getTrends(
+      connection,
+      { channel: 'official', sort: 'important', limit: 10 },
+      { now: NOW },
+    );
+    expect(official.items[0]!.ranking.signals.communityEcho).toBe(shared!.ranking.score);
   });
 
   it('preserves the exact legacy hotness/diversity order by default', () => {

@@ -11,6 +11,11 @@ export function diversifyBySource<T extends { source: string }>(
 ): T[] {
   const targetCount = normalizedLimit(limit, ranked.length);
   if (targetCount === 0) return [];
+  // Diversity can only change which candidates are selected when a limit
+  // excludes part of the ranked list. Reordering the complete population
+  // would let a lower-scoring Sighting become a Story's representative before
+  // the service deduplicates by Story.
+  if (targetCount === ranked.length) return [...ranked];
   if (new Set(ranked.map((item) => item.source)).size <= 1) {
     return ranked.slice(0, targetCount);
   }

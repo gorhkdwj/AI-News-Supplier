@@ -68,12 +68,15 @@ describe('githubCollector', () => {
     const queries = searchRequests.map(
       (request) => new URL(request.url).searchParams.get('q') ?? '',
     );
-    expect(queries.some((query) => query.includes('created:>') && !query.includes('stars:>'))).toBe(
-      true,
-    );
-    expect(
-      queries.some((query) => query.includes('pushed:>') && query.includes('stars:>100')),
-    ).toBe(true);
+    const discoveryQuery = queries.find((query) => query.includes('created:')) ?? '';
+    const activeQuery = queries.find((query) => query.includes('pushed:')) ?? '';
+    expect(discoveryQuery).toContain('(ai OR llm OR gpt OR rag OR agentic)');
+    expect(discoveryQuery).toContain('in:name,description,topics');
+    expect(discoveryQuery).toContain('created:>=2026-06-26');
+    expect(discoveryQuery).not.toContain('topic:llm topic:ai');
+    expect(discoveryQuery).not.toContain('stars:');
+    expect(activeQuery).toContain('pushed:>=2026-06-26');
+    expect(activeQuery).toContain('stars:>=100');
   });
 
   it('검색에서 누락된 추적 저장소를 최대 50개까지 공식 Repository API로 재확인한다', async () => {
