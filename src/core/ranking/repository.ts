@@ -43,10 +43,8 @@ interface RepositorySignals {
   pushFreshness: number;
 }
 
-function baseEligible(candidate: RepositoryCandidate): boolean {
-  return (
-    candidate.quality === 'live' && candidate.aiEligible && !candidate.fork && !candidate.archived
-  );
+function structurallyEligible(candidate: RepositoryCandidate): boolean {
+  return candidate.aiEligible && !candidate.fork && !candidate.archived;
 }
 
 function isNew(candidate: RepositoryCandidate, now: Date): boolean {
@@ -59,7 +57,8 @@ export function rankRepositoryTrending(
 ): Array<RankedTrend<RepositoryCandidate>> {
   const eligible = candidates.filter(
     (candidate) =>
-      baseEligible(candidate) &&
+      candidate.quality === 'live' &&
+      structurallyEligible(candidate) &&
       !isNew(candidate, options.now) &&
       candidate.totalStars >= 100 &&
       ageHours(candidate.activityAt, options.now) <= 14 * 24 &&
@@ -139,7 +138,7 @@ export function rankRepositoryDiscovery(
   options: RankOptions,
 ): Array<RankedTrend<RepositoryCandidate>> {
   const ranked = candidates
-    .filter((candidate) => baseEligible(candidate) && isNew(candidate, options.now))
+    .filter((candidate) => structurallyEligible(candidate) && isNew(candidate, options.now))
     .sort(
       (left, right) =>
         Date.parse(right.createdAt) - Date.parse(left.createdAt) ||

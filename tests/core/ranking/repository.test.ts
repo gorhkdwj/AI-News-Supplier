@@ -79,6 +79,22 @@ describe('repository trending', () => {
     expect(discovery.every((item) => item.ranking.coverage === 'warming')).toBe(true);
   });
 
+  it('keeps legacy 신규 저장소 in scoreless Discovery while excluding it from Trending', () => {
+    const legacyFresh = repo({
+      storyId: 'legacy-fresh',
+      quality: 'legacy_unverified',
+      createdAt: '2026-07-09T00:00:00.000Z',
+    });
+
+    expect(rankRepositoryTrending([legacyFresh], { now: NOW })).toEqual([]);
+    expect(rankRepositoryDiscovery([legacyFresh], { now: NOW })).toEqual([
+      expect.objectContaining({
+        storyId: 'legacy-fresh',
+        ranking: expect.objectContaining({ score: null, coverage: 'warming' }),
+      }),
+    ]);
+  });
+
   it('requires live quality, eligibility, star floor, baselines and recent activity', () => {
     const candidates = [
       repo({ storyId: 'eligible' }),
