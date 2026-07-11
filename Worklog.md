@@ -10,6 +10,44 @@
 
 ---
 
+### W-022 · trend-ranking-v2 worktree와 브랜치 정리
+
+**요청**
+
+- `0.Ai_News_Supplier-trend-v2` 작업 폴더와 관련 로컬·원격 브랜치를 모두 정리
+
+**수행 작업**
+
+- `codex/trend-ranking-v2`가 `main`에 완전히 포함됐는지 재확인
+- 대상 worktree의 미커밋 변경과 제거 대상 절대경로를 재확인
+- `git worktree remove`와 `git worktree prune`으로 작업 폴더·등록 정리
+- 로컬 `codex/trend-ranking-v2` 브랜치 삭제
+- 원격 `origin/codex/trend-ranking-v2` 브랜치 삭제
+- 별개인 `main`의 `.codex/config.toml` 미커밋 변경은 보존
+
+**변경 파일**
+
+- `Worklog.md`
+
+**검증**
+
+- `npm test`: 30개 파일·199개 테스트 통과
+- feature HEAD가 `main`의 ancestor임을 확인
+- 제거 전 worktree 상태: clean
+- 대상 경로 `Test-Path`: `False`
+- `git worktree list`: main worktree 하나만 존재
+- 로컬·원격 `codex/trend-ranking-v2` 브랜치가 모두 없음을 확인
+
+**판단 근거**
+
+- v2 구현과 후속 수정이 이미 `main`에 병합·푸시됐고 별도 worktree에 고유 변경이 없어 안전하게 정리할 수 있었음
+- 폴더를 탐색기에서 직접 지우지 않고 Git worktree 등록을 먼저 정상 해제해 stale 메타데이터를 남기지 않음
+
+**결과**
+
+- 완료: trend-ranking-v2 작업 폴더, worktree 등록, 로컬 브랜치와 원격 브랜치 전체 정리
+- 보존: `main`과 `origin/main`, 사용자 의도 확인 중인 `.codex/config.toml` 변경
+
 ### W-021 · README 요약본과 단일 HTML 사용자 설명서 구축
 
 **요청**
