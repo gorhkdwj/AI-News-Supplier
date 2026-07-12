@@ -72,6 +72,41 @@
 
 ---
 
+### W-032 · 스냅샷 미러 게시 파이프라인 구현 (D-009 채택, M1·M2)
+
+**요청**
+
+- "미러를 먼저 구현해둬도 괜찮지 않나" — 미러 데이터는 소급 생성이 불가능하므로 게시를 즉시 시작하고, 클라이언트 시딩(M3)은 v2 전환과 함께 구현하기로 확정
+
+**수행 작업**
+
+- D-009 기록(미러 채택, 게시 선구현) 및 기준 계약 14절 신설(범위 hackernews/devto/github, Reddit·공식 RSS 제외와 사유, 산출물 형식, 상태 DB, 멱등 병합 규칙)
+- M1: `src/core/mirror/export.ts`(listMirrorBuckets, exportMirrorBucket — raw 원문 제외) + `ains mirror export --hours --out` CLI(gzip + sha256 요약 JSON 출력) + 테스트 8개
+- M2: `.github/workflows/mirror.yml` — 매시 7분 cron으로 미러 소스만 fetch → 시간 버킷 증분 내보내기 → rolling release(`mirror-data`, prerelease)에 자산 게시, `mirror-state.db`로 실행 간 상태 유지, `tools/mirror-manifest.mjs`로 manifest 병합·14일 초과 자산 정리
+- docs/index.html 운영 명령 절에 mirror 명령 안내(유지관리용, Reddit 제외 사유) 추가
+
+**변경 파일**
+
+- Decisionlog.md(D-009), docs/requirements-contract.md(14절 신설, 기존 외부 자료 기록은 15절), src/core/mirror/export.ts(신규), src/cli/commands/mirror.ts(신규), src/cli/index.ts, tests/core/mirrorExport.test.ts(신규 8), tools/mirror-manifest.mjs(신규), .github/workflows/mirror.yml(신규), docs/index.html, Worklog.md
+
+**검증**
+
+- 테스트 33파일·234개 통과, typecheck·lint·prettier 클린
+- 실기 export: 실제 DB에서 4개 버킷(27~90KB/버킷) 산출, 포함 소스 github/hackernews만·raw 부재 확인(계약 14.1 준수)
+- manifest 스크립트: 신규 생성·병합·cutoff 정리 3케이스 로컬 검증
+- workflow_dispatch 수동 트리거는 PAT의 Actions 권한 부재로 403 → cron(매시 7분) 자동 실행으로 검증 대기. 결과는 확인 후 추기.
+- 메인 CI가 tools/mirror-manifest.mjs의 no-undef 4건으로 실패(T-011: 로컬 검증의 tail 파이프가 종료 코드를 가려 통과로 오보) → eslint에 tools 전역 선언 추가, 파이프 없이 종료 코드 0 재확인 후 재커밋.
+
+**판단 근거**
+
+- 미러 가치는 축적 기간에 비례("가짜 과거값 금지" 원칙상 소급 불가) → 게시 조기 시작이 곧 기능. 클라이언트 시딩은 소비자(v2 기본 사용자)가 생기기 전 실익이 없어 분리.
+
+**결과**
+
+- 완료: 게시 파이프라인 코드·문서. 남은 작업: cron 첫 실행 green 확인, M3(fetch --seed)는 v2 전환(0.2.0)과 함께
+
+---
+
 ### W-031 · 정적 스냅샷 미러 후보 검토: 공식 RSS 약관 조사
 
 **요청**
