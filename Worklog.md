@@ -61,7 +61,37 @@
 
 **결과**
 
-- 완료: 커밋 5ff24f6 푸시. CI 결과는 확인 후 추기.
+- 완료: 커밋 5ff24f6 푸시. CI 첫 실행(run 29183343737) 12개 중 11개 통과 — macOS/Linux 전 조합 green으로 **타 OS 미검증(W-026) 해소**. 유일한 실패 `test (windows-latest, node 20)`은 Node 20 지원 문제로 판명 → D-006/W-028로 이어짐.
+
+---
+
+### W-028 · 최소 Node 버전 22.12 상향과 0.1.1 준비
+
+**요청**
+
+- CI가 발견한 Node 20 호환성 문제 처리(선택지 제시 후 사용자가 상향 결정)
+
+**수행 작업**
+
+- CI 실패 로그 분석: ① better-sqlite3 win32+Node20 프리빌트 부재로 소스 컴파일 실패, ② commander@15의 engines가 node >=22.12.0 요구 → "Node ≥ 20" 선언이 애초 성립하지 않았음을 확인
+- D-006 결정 기록 후 일괄 반영: package.json(version 0.1.1, engines >=22.12.0), doctor.ts(검사 22 기준), tsup.config.ts(target node22), ci.yml(매트릭스 [22,24]), README·docs/index.html(3곳)·CLAUDE.md·AGENTS.md의 Node 표기
+
+**변경 파일**
+
+- package.json, src/cli/commands/doctor.ts, tsup.config.ts, .github/workflows/ci.yml, README.md, docs/index.html, CLAUDE.md, AGENTS.md, Decisionlog.md, Worklog.md, Troubleshootinglog.md
+
+**검증**
+
+- 로컬: build 성공, 테스트 199개 통과, `--version` 0.1.1, prettier 통과
+- CI 재실행(run 29183843394): 테스트 6조합(3-OS × Node 22/24) + pack smoke 3-OS **전부 통과**. macOS/Linux에서 better-sqlite3 설치·CLI 실행·doctor까지 검증됨
+
+**판단 근거**
+
+- Node 20은 2026-04 EOL. 의존성 요구(commander 22.12+)와 실측 실패(win32 프리빌트 부재)가 겹쳐, 지원 유지가 아니라 기준 상향이 정직한 해결. 기준 변경이므로 CLAUDE.md·계약 수준 문서를 코드와 같은 커밋에서 갱신(5절)
+
+**결과**
+
+- 완료: 커밋 2250db7 푸시. 남은 작업: CI green 확인 → 사용자 npm publish(0.1.1, OTP 필요)
 
 ---
 
