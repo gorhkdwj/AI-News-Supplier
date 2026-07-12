@@ -1914,6 +1914,15 @@ codex mcp list</code></pre>
                   <span class="code-label">shell</span>
                   <pre><code>claude mcp add ains -- ains-mcp</code></pre>
                 </div>
+                <p>
+                  Claude <strong>데스크톱 앱</strong>(Cowork 포함)은 별개의 등록 장부를 씁니다. 설정
+                  → 개발자 → Edit Config(<code>claude_desktop_config.json</code>)의
+                  <code>mcpServers</code>에 <code>npx -y -p ai-news-supplier ains-mcp</code> 항목을
+                  추가한 뒤 <strong>시스템 트레이에서 앱을 완전히 종료</strong>하고 다시
+                  실행하십시오. GUI 앱은 터미널과 PATH가 달라 <code>npx</code>가 실패할 수 있으며,
+                  그 경우 절대 경로 탭의 방식을 사용합니다. claude.ai 웹은 로컬 STDIO 서버에 연결할
+                  수 없습니다.
+                </p>
               </div>
               <div class="tab-panel" role="tabpanel" data-panel="absolute-path" hidden>
                 <p>PATH 연결이 어려우면 빌드 산출물을 Node.js로 직접 실행할 수 있습니다.</p>

@@ -82,6 +82,28 @@ command = "ains-mcp"
 claude mcp add ains -- npx -y -p ai-news-supplier ains-mcp
 ```
 
+### Claude 데스크톱 앱 (Cowork 포함)
+
+Claude 데스크톱 앱은 Claude Code와 **별개의** MCP 등록 장부를 씁니다 — 한쪽에 등록해도 다른 쪽에는 나타나지 않습니다. 설정 → 개발자 → Edit Config(`claude_desktop_config.json`)에 다음을 추가하십시오.
+
+```json
+{
+  "mcpServers": {
+    "ains": {
+      "command": "npx",
+      "args": ["-y", "-p", "ai-news-supplier", "ains-mcp"]
+    }
+  }
+}
+```
+
+주의할 점 두 가지:
+
+- 저장 후 **시스템 트레이에서 앱을 완전히 종료**하고 다시 실행하십시오 — 창만 닫으면 이전 설정의 프로세스가 계속 살아 있습니다.
+- GUI 앱은 터미널과 `PATH`가 다를 수 있습니다. `npx`(또는 `ains-mcp` 단독)가 실패하면 절대 경로를 사용하십시오. 예: `"command": "C:\\경로\\node.exe", "args": ["C:\\경로\\node_modules\\ai-news-supplier\\dist\\mcp\\server.js"]`
+
+등록되면 Cowork 세션에서도 ains를 사용할 수 있습니다. claude.ai **웹**은 로컬 STDIO 서버에 연결할 수 없습니다.
+
 등록 후 에이전트를 완전히 종료했다가 다시 열고 새 작업에서 확인하십시오. `ains-mcp`는 HTTP 서버가 아니라 표준 입출력으로 에이전트와 통신하는 STDIO MCP 서버입니다.
 
 ## 대표 명령

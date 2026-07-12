@@ -72,6 +72,38 @@
 
 ---
 
+### W-034 · Claude 데스크톱 앱(Cowork) MCP 연결 해결과 문서화
+
+**요청**
+
+- 데스크톱 앱/Cowork에서 ains 조회 불가 문제 해결, 해결 방법을 0.3.0 전 README에 기재
+
+**수행 작업**
+
+- 원인 진단: ① MCP 등록 장부는 클라이언트(Claude Code/데스크톱 앱/Codex)마다 별개 — 데스크톱 앱에는 등록된 적 없음. ② 설정 수정 후에도 앱이 트레이에 살아 있어 재시작 안 됨(로그의 MCP 초기화 시각으로 확정)
+- 사용자 `claude_desktop_config.json`에 ains 항목 추가(절대 경로 방식, JSON 유효성 검증) → 트레이 완전 종료·재시작 후 일반 채팅·Cowork 모두 9개 도구 인식 확인
+- Claude Code 연결은 현 세션에서 `mcp__ains__get_source_status` 네이티브 호출로 실증(14소스 응답). 부수 확인: 응답의 last_success_at(10:33Z)로 숨김 스케줄러의 실제 fetch 성공 검증 — W-029 미검증 항목 해소
+- README.md/README.ko.md MCP 절에 "Claude Desktop app (Cowork 포함)" 하위 절 신설: 별도 장부 설명, config 예시(npx), 트레이 완전 종료 주의, GUI PATH 차이 시 절대 경로 대안, 웹 불가 명시. docs/index.html Claude Code 탭에 동일 요지 추가
+
+**변경 파일**
+
+- README.md, README.ko.md, docs/index.html, Worklog.md (+ 사용자 로컬 claude_desktop_config.json — 저장소 외부)
+
+**검증**
+
+- 3개 환경 실증: 데스크톱 일반 채팅(스크린샷), Cowork(스크린샷), Claude Code(네이티브 호출)
+- 미검증: npx 방식의 데스크톱 앱 동작(사용자 환경은 절대 경로로 등록됨 — README의 npx 예시는 일반 사용자용 표준 경로이나 GUI PATH 제약 주의를 병기함)
+
+**판단 근거**
+
+- "npm 배포 ≠ 클라이언트 연결"이라는 간극은 모든 신규 사용자가 겪을 문제로 문서화 가치가 높음. 발견성 개선 3종(MCP 레지스트리 등록, ains setup 명령, MCPB 번들)은 0.3.0 이후 후보로 식별
+
+**결과**
+
+- 완료: 3개 환경 연결 + 문서 반영. npm README는 다음 publish(0.3.0) 때 갱신되고 GitHub에는 즉시 반영
+
+---
+
 ### W-033 · D-010: 0.2.0 즉시 publish 결정과 문서 재정렬
 
 **요청**

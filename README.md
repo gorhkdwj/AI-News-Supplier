@@ -82,6 +82,28 @@ To try it without a global install (server startup may be slower):
 claude mcp add ains -- npx -y -p ai-news-supplier ains-mcp
 ```
 
+### Claude Desktop app (including Cowork)
+
+The Claude Desktop app keeps its **own** MCP registry, separate from Claude Code — registering in one does not register in the other. Open Settings → Developer → Edit Config (`claude_desktop_config.json`) and add:
+
+```json
+{
+  "mcpServers": {
+    "ains": {
+      "command": "npx",
+      "args": ["-y", "-p", "ai-news-supplier", "ains-mcp"]
+    }
+  }
+}
+```
+
+Two gotchas worth knowing:
+
+- **Fully quit the app from the system tray**, then relaunch — closing the window is not enough, and a running app keeps the old config.
+- GUI apps may resolve `PATH` differently from your terminal. If `npx` (or a bare `ains-mcp`) fails, use absolute paths instead, e.g. `"command": "C:\\path\\to\\node.exe", "args": ["C:\\path\\to\\global\\node_modules\\ai-news-supplier\\dist\\mcp\\server.js"]`.
+
+Once registered, Cowork sessions can use ains as well. The claude.ai **web** app cannot connect to local STDIO servers.
+
 Restart the agent completely after registering. `ains-mcp` is a STDIO MCP server — it talks to the agent over standard input/output, not HTTP.
 
 ## Common commands
