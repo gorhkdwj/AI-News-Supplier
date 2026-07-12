@@ -10,6 +10,30 @@
 
 ---
 
+### T-010 · npm publish 403 (2FA 미설정으로 업로드 거부)
+
+**발생 상황**
+
+- 0.1.0 최초 npm publish 시도. prepublishOnly(빌드+테스트 199개)는 전부 통과한 뒤 업로드 단계에서 실패.
+
+**증상**
+
+- `npm error 403 Forbidden - PUT .../ai-news-supplier - Two-factor authentication or granular access token with bypass 2fa enabled is required to publish packages.`
+
+**확인된 원인**
+
+- npm 레지스트리가 공급망 보안 정책으로 publish 시 2FA(또는 2FA 우회 granular token)를 요구하는데, 계정(gorhkdwj)에 2FA가 미설정 상태였음. 코드·패키지 문제 아님(레지스트리에 아무것도 올라가지 않음).
+
+**조치**
+
+- 사용자가 npmjs.com 계정 설정에서 인증 앱 기반 2FA를 등록한 뒤, 본인 터미널에서 `npm publish --access public` 재실행(OTP 입력). 0.1.0 공개 성공(2026-07-12T02:57Z).
+
+**재발 방지**
+
+- 이후 publish는 항상 OTP 입력이 필요하므로 사용자 터미널에서 직접 실행한다. OTP·토큰은 저장소·로그에 남기지 않는다(CLAUDE.md 7절).
+
+---
+
 ### T-009 · 단일 HTML 검증 보조 명령의 인라인 코드 오탐과 PowerShell 인용 실패
 
 **발생 상황**

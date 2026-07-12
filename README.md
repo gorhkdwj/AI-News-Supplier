@@ -17,7 +17,13 @@
 
 ## 5분 빠른 시작
 
-현재 `0.1.0`은 npm 레지스트리에 배포하기 전 단계이므로 저장소에서 빌드해 사용합니다. Node.js 20 이상이 필요합니다.
+Node.js 20 이상이 필요합니다. npm 레지스트리에서 전역 설치합니다.
+
+```bash
+npm install -g ai-news-supplier
+```
+
+소스에서 직접 빌드하려면(개발·기여용) 다음을 사용합니다.
 
 ```bash
 git clone https://github.com/gorhkdwj/AI-News-Supplier.git
@@ -48,7 +54,18 @@ ains trends --ranking v2 --channel official --sort important
 
 ## MCP 빠른 연결
 
-먼저 `npm link` 후 `ains-mcp`가 PATH에서 실행되는지 확인하십시오. Codex 프로젝트 범위 설정은 다음과 같습니다.
+전역 설치(`npm install -g ai-news-supplier`)를 마치면 `ains-mcp`가 PATH에 등록됩니다. 에이전트별 등록 명령은 다음과 같습니다.
+
+```bash
+# Claude Code
+claude mcp add ains -- ains-mcp
+
+# Codex CLI (사용자 전역)
+codex mcp add ains -- ains-mcp
+codex mcp list
+```
+
+Codex 프로젝트 범위 설정 파일을 직접 쓰는 경우는 다음과 같습니다.
 
 ```toml
 # .codex/config.toml
@@ -56,14 +73,13 @@ ains trends --ranking v2 --channel official --sort important
 command = "ains-mcp"
 ```
 
-Codex CLI로 사용자 전역에 등록하려면 다음 명령을 사용할 수 있습니다.
+전역 설치 없이 시험하려면 `npx`로 등록할 수도 있습니다(서버 시작이 다소 느려질 수 있습니다).
 
 ```bash
-codex mcp add ains -- ains-mcp
-codex mcp list
+claude mcp add ains -- npx -y -p ai-news-supplier ains-mcp
 ```
 
-등록 후 Codex를 완전히 종료했다가 다시 열고 새 작업에서 확인하십시오. `ains-mcp`는 HTTP 서버가 아니라 표준 입출력으로 에이전트와 통신하는 STDIO MCP 서버입니다.
+등록 후 에이전트를 완전히 종료했다가 다시 열고 새 작업에서 확인하십시오. `ains-mcp`는 HTTP 서버가 아니라 표준 입출력으로 에이전트와 통신하는 STDIO MCP 서버입니다.
 
 ## 대표 명령
 

@@ -33,6 +33,78 @@
 - 완료: 60분 주기 자동 수집 활성화
 - 남은 작업: 없음 (arxiv 시간 초과는 일시적 네트워크 지연으로 추정, 반복 시 T-ID 기록 필요)
 
+---
+
+### W-026 · npm 최초 배포(0.1.0)와 설치 문서 전환
+
+**요청**
+
+- 배포 task 순서대로 진행: 소스맵 결정 → MCP 등록 문서화 → 설치 안내 갱신 → publish → 스모크 테스트
+
+**수행 작업**
+
+- 소스맵 포함 유지 결정: `sourcesContent` 내장 확인(56개 원본 포함, 패키지 단독으로 디버깅 가능). 737kB는 npm 생태계 기준 무시 가능 판단
+- README·docs/index.html 설치 안내를 `npm install -g ai-news-supplier` 기준으로 전환(소스 빌드는 개발용으로 이동), MCP 절에 Claude Code 등록과 npx 무설치 대안(`npx -y -p ai-news-supplier ains-mcp`) 추가, 문제 해결 절 갱신
+- publish 1차 시도 403(2FA 필요, T-010) → 사용자가 2FA 등록 후 본인 터미널에서 publish 성공
+- 레지스트리 실검증: `npm view`(0.1.0, latest), 새 폴더에 레지스트리 실설치(취약점 0) 후 `ains --version`/`doctor` green, 문서화한 npx MCP 명령으로 initialize 핸드셰이크 성공
+
+**변경 파일**
+
+- README.md, docs/index.html, Worklog.md, Troubleshootinglog.md
+
+**검증**
+
+- prettier 통과, "배포 전" 잔여 문구 0건
+- prepublishOnly에서 테스트 30파일·199개 전부 통과 후 업로드됨
+- 공개 패키지 기준 설치→CLI→DB(네이티브 모듈)→MCP 전 구간 스모크 통과 (Windows x64, Node v24.14.1)
+
+**판단 근거**
+
+- 문서를 publish와 같은 흐름에서 갱신해 "구현되지 않은 것을 제공한다고 표현하지 않는다"(8절)를 유지
+- OTP는 시간 민감 비밀정보이므로 publish 최종 단계는 사용자 터미널에서 직접 수행
+
+**결과**
+
+- 완료: https://www.npmjs.com/package/ai-news-supplier 0.1.0 공개
+- 미검증 범위: macOS/Linux에서의 better-sqlite3 설치·동작(추후 실기 확인 시 기록)
+
+---
+
+### W-025 · README 정합성 점검 (npm publish 전)
+
+**요청**
+
+- 배포 단계를 task로 등록하고 README 정합성부터 점검
+
+**수행 작업**
+
+- README의 모든 주장(기능 표, CLI 명령·옵션, MCP 도구·프롬프트 수, 수집 소스, 데이터·보안 수치, 기본 랭킹)을 실행 결과·코드와 대조
+- CLI: `trends/fetch/search/learn/schedule/config` 하위 옵션 전부를 클린 설치본 `--help` 출력과 대조 → 일치
+- MCP: stdio로 `tools/list`(9개)·`prompts/list`(3개: trend-briefing, learn-today, deep-dive) 실호출 → README 표기와 일치
+- 수치: 보존 90일(config.ts:33), snapshot 14일(sightingStore.ts:823), Reddit 48시간(sightingStore.ts:744), `AINS_HOME`(paths.ts:9) → 일치
+- 기본 랭킹: request.ts:131-133에서 옵션 없으면 legacy, channel/sort 지정 시 v2 → README 문구와 일치
+
+**변경 파일**
+
+- Worklog.md (기록. W-023 제목 줄이 W-024 추가 시 유실된 것도 복원)
+
+**검증**
+
+- 전 항목 실행 기반 대조 완료. 불일치 0건.
+- publish 시점에 갱신 필요한 곳 2곳 식별: README "5분 빠른 시작"(배포 전 단계 문구), docs/index.html:1325(같은 문구)
+
+**판단 근거**
+
+- CLAUDE.md 8절(README에는 실제 구현만) 준수 확인이 publish 전제 조건. 현재 문구는 배포 전 상태 기준으로 정확하므로, npm 설치 안내로의 교체는 publish와 같은 커밋에서 수행해야 문서가 거짓이 되는 구간이 없음.
+
+**결과**
+
+- 완료: README 정합성 green. 남은 작업: 소스맵 결정 → MCP npx 문서화 → publish 직전 설치 안내 갱신 → publish → 스모크 테스트
+
+---
+
+### W-023 · npm 배포 개념 설명 및 배포물 검증(publish 전)
+
 **요청**
 
 - ains CLI/MCP가 로컬 파일 의존이라는 점 확인과 배포 방법 문의 → 개념 설명 후 배포 검증 진행

@@ -1322,8 +1322,8 @@
                 <h2 id="quickstart-title">설치와 빠른 시작</h2>
               </div>
               <p>
-                현재 버전은 npm 공개 배포 전 단계입니다. 저장소를 내려받아 빌드하고 전역 명령을
-                연결합니다.
+                npm 레지스트리에서 전역 설치하면 <code>ains</code>와 <code>ains-mcp</code> 명령이
+                바로 사용 가능해집니다.
               </p>
             </div>
 
@@ -1338,28 +1338,25 @@
             <div class="workflow">
               <div class="workflow-index">1</div>
               <div class="workflow-body">
-                <h4>저장소를 복제하고 의존성을 설치합니다</h4>
+                <h4>npm에서 전역 설치합니다</h4>
                 <div class="code-block">
                   <span class="code-label">shell</span>
-                  <pre><code>git clone https://github.com/gorhkdwj/AI-News-Supplier.git
-cd AI-News-Supplier
-npm install</code></pre>
+                  <pre><code>npm install -g ai-news-supplier</code></pre>
                 </div>
               </div>
             </div>
             <div class="workflow">
               <div class="workflow-index">2</div>
               <div class="workflow-body">
-                <h4>빌드하고 CLI·MCP 실행 파일을 전역에 연결합니다</h4>
+                <h4>설치를 확인합니다</h4>
                 <div class="code-block">
                   <span class="code-label">shell</span>
-                  <pre><code>npm run build
-npm link
-ains --version</code></pre>
+                  <pre><code>ains --version</code></pre>
                 </div>
                 <p class="muted small">
-                  <code>npm link</code> 없이 시험하려면 <code>node dist/cli/index.js --help</code>를
-                  사용할 수 있습니다.
+                  소스에서 직접 빌드하려면(개발·기여용) 저장소를 복제한 뒤
+                  <code>npm install &amp;&amp; npm run build &amp;&amp; npm link</code>를
+                  사용합니다.
                 </p>
               </div>
             </div>
@@ -2833,10 +2830,10 @@ args = ["C:/absolute/path/AI-News-Supplier/dist/mcp/server.js"]</code></pre>
               <div class="details-body">
                 <ol>
                   <li>
-                    저장소에서 <code>npm install</code>과 <code>npm run build</code>가 성공했는지
-                    확인합니다.
+                    <code>npm install -g ai-news-supplier</code>를 다시 실행합니다. 소스 빌드
+                    사용자는 저장소에서 <code>npm install</code>, <code>npm run build</code>,
+                    <code>npm link</code>가 성공했는지 확인합니다.
                   </li>
-                  <li><code>npm link</code>를 다시 실행합니다.</li>
                   <li>새 터미널을 열고 PATH를 다시 읽습니다.</li>
                   <li>
                     Windows는 <code>Get-Command ains</code>, macOS/Linux는
