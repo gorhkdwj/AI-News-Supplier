@@ -104,6 +104,8 @@ Claude 데스크톱 앱은 Claude Code와 **별개의** MCP 등록 장부를 씁
 
 등록되면 Cowork 세션에서도 ains를 사용할 수 있습니다. claude.ai **웹**은 로컬 STDIO 서버에 연결할 수 없습니다.
 
+**Windows에서 전역 설치를 업데이트**(`npm install -g ai-news-supplier`)할 때는 `ains-mcp`를 실행 중인 앱을 먼저 종료하십시오 — 실행 중인 서버가 네이티브 SQLite 모듈 파일을 잠그고 있어 업데이트가 `EPERM`으로 실패할 수 있습니다. (`npx` 등록은 버전별 캐시가 분리되어 영향이 없습니다.)
+
 등록 후 에이전트를 완전히 종료했다가 다시 열고 새 작업에서 확인하십시오. `ains-mcp`는 HTTP 서버가 아니라 표준 입출력으로 에이전트와 통신하는 STDIO MCP 서버입니다.
 
 ## 대표 명령

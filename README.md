@@ -104,6 +104,8 @@ Two gotchas worth knowing:
 
 Once registered, Cowork sessions can use ains as well. The claude.ai **web** app cannot connect to local STDIO servers.
 
+When upgrading a **global install on Windows** (`npm install -g ai-news-supplier`), quit apps that are running `ains-mcp` first — a running server holds a lock on the native SQLite module and the upgrade may fail with `EPERM`. (`npx` registrations are unaffected: each version lives in its own cache.)
+
 Restart the agent completely after registering. `ains-mcp` is a STDIO MCP server — it talks to the agent over standard input/output, not HTTP.
 
 ## Common commands
