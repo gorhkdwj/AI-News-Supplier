@@ -1,0 +1,90 @@
+name: Mirror
+
+# 스냅샷 미러 게시 파이프라인 (기준 계약 14절, D-009)
+# 매시간 hackernews/devto/github만 수집해 시간 버킷 증분을 rolling release에 게시한다.
+# 실패는 다음 주기에 자연 재시도되며 클라이언트 동작에 영향을 주지 않는다.
+
+on:
+  schedule:
+    - cron: '7 * * * *' # 매시 7분 (정시 부하 회피)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # release 자산 업로드/삭제
+
+concurrency:
+  group: mirror-publish
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: mirror-data
+  AINS_HOME: ${{ github.workspace }}/.mirror-home
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Ensure rolling release exists
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --prerelease \
+              --title "Snapshot Mirror Data" \
+              --notes "시간별 스냅샷 미러 산출물(rolling). 범위와 형식은 docs/requirements-contract.md 14절을 따릅니다."
+
+      - name: Restore pipeline state DB
+        run: |
+          mkdir -p "$AINS_HOME"
+          if gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+               --pattern mirror-state.db --output "$AINS_HOME/data.db"; then
+            echo "이전 상태 DB 복원됨"
+          else
+            echo "이전 상태 없음 — 첫 실행으로 시작"
+          fi
+
+      # 미러 소스만 수집한다. Reddit(자격증명 없음)·공식 RSS는 계약 14.1절에 따라 제외.
+      - name: Fetch mirror sources
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node dist/cli/index.js fetch --quiet --source "hackernews,devto,github"
+
+      - name: Export hourly increments
+        run: |
+          mkdir -p out/mirror
+          node dist/cli/index.js mirror export --hours 3 --out out/mirror > out/export-summary.json
+          cat out/export-summary.json
+
+      - name: Build manifest and prune list
+        run: |
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern manifest.json --output out/old-manifest.json || echo "이전 manifest 없음"
+          CUTOFF=$(date -u -d '14 days ago' +%Y-%m-%dT%H)
+          node tools/mirror-manifest.mjs out/old-manifest.json out/export-summary.json "$CUTOFF" out/mirror/manifest.json > out/prune.txt
+          echo "--- manifest 항목 수 ---"
+          node -e "console.log(JSON.parse(require('fs').readFileSync('out/mirror/manifest.json','utf8')).files.length)"
+          echo "--- 정리 대상 ---" && cat out/prune.txt || true
+
+      - name: Upload assets
+        run: |
+          cp "$AINS_HOME/data.db" out/mirror-state.db
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            out/mirror/*.json.gz out/mirror/manifest.json out/mirror-state.db
+
+      - name: Prune assets older than 14 days
+        run: |
+          while IFS= read -r asset; do
+            [ -n "$asset" ] || continue
+            gh release delete-asset "$RELEASE_TAG" "$asset" --repo "$GITHUB_REPOSITORY" --yes || true
+          done < out/prune.txt

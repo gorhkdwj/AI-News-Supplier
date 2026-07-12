@@ -9,6 +9,7 @@ import { registerLearn } from './commands/learn.js';
 import { registerHistory } from './commands/history.js';
 import { registerSchedule } from './commands/schedule.js';
 import { registerConfig } from './commands/config.js';
+import { registerMirror } from './commands/mirror.js';
 import { maybeNotifyUpdate } from './updateNotice.js';
 
 const program = new Command();
@@ -29,6 +30,7 @@ registerLearn(program);
 registerHistory(program);
 registerSchedule(program);
 registerConfig(program);
+registerMirror(program);
 
 // MCP 서버로 뜰 때는 업데이트 안내를 포함해 어떤 부가 출력도 하지 않는다.
 const isMcpProcess = process.argv[2] === 'mcp';
