@@ -103,7 +103,7 @@
 
 **결과**
 
-- 완료: 게시 파이프라인 코드·문서. 남은 작업: cron 첫 실행 green 확인, M3(fetch --seed)는 v2 전환(0.2.0)과 함께
+- 완료: 게시 파이프라인 코드·문서. cron 첫 실행이 2슬롯 넘게 지연되어(신규 스케줄 등록 지연, GitHub 측) 사용자가 PAT에 Actions 권한 추가 후 workflow_dispatch로 첫 실행(run 29188799600, 23초, success). 끝-대-끝 검증 통과: release mirror-data 생성, 자산 3종(json.gz 120KB·manifest·state.db 876KB), 다운로드 sha256 = manifest 기재값 일치, 내용 279 sightings/snapshots — 소스 devto·github·hackernews만, raw 부재(계약 14.1 준수). 이후 매시 7분 cron 자동. 남은 작업: M3(fetch --seed)는 v2 전환(0.2.0)과 함께
 
 ---
 
