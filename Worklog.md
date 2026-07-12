@@ -10,6 +10,58 @@
 
 ---
 
+### W-024 · 데스크톱 60분 주기 자동 fetch 스케줄 등록
+
+**요청**
+- ains fetch가 데스크톱에서 60분마다 자동 실행되도록 설정
+
+**수행 작업**
+- 기존 `ains schedule` 기능(W-010에서 구현)을 사용해 Windows 작업 스케줄러에 `ai-news-supplier-fetch` 작업 등록 (`ains schedule install --every 60`)
+- 등록된 실행 명령이 npm link 전역 설치본(`C:\nvm4w\nodejs\node_modules\ai-news-supplier` → 이 저장소 Junction)의 `dist/cli/index.js`를 가리킴을 확인
+
+**변경 파일**
+- 없음 (OS 작업 스케줄러 등록만 수행. Worklog.md 기록 추가)
+
+**검증**
+- `schtasks /Query /V`로 등록 명령·반복 주기(1시간) 확인
+- 등록된 명령을 그대로 1회 수동 실행: 종료 코드 0, 보존 정책 정리 1건 수행. arxiv 소스 1건이 시간 초과(30000ms)로 실패했으나 전체 수집은 정상 진행(소스 격리 불변 규칙대로 동작)
+
+**판단 근거**
+- 전역 `ains`가 npm link로 이 저장소 dist를 가리키므로, 저장소를 옮기거나 dist를 삭제하면 스케줄이 조용히 실패함. 해제는 `ains schedule uninstall`
+
+**결과**
+- 완료: 60분 주기 자동 수집 활성화
+- 남은 작업: 없음 (arxiv 시간 초과는 일시적 네트워크 지연으로 추정, 반복 시 T-ID 기록 필요)
+
+**요청**
+
+- ains CLI/MCP가 로컬 파일 의존이라는 점 확인과 배포 방법 문의 → 개념 설명 후 배포 검증 진행
+
+**수행 작업**
+
+- npm 패키지 배포 개념 설명(서비스 배포 vs 패키지 배포, src→dist 빌드, bin/files/deps, 네이티브 모듈, semver, MCP npx 등록, stdout 순수성)
+- 배포 검증: `npm run build`(성공) → `npm view`로 이름 `ai-news-supplier` 미사용(가용) 확인 → `npm pack --dry-run`(7파일 288.9kB) → scratchpad에 실제 tarball 생성 후 빈 프로젝트에 클린 설치(143 deps, 취약점 0)
+- 클린 설치 환경에서 실행 검증: `ains --version`(0.1.0), `ains --help`(명령 목록), `ains doctor`(better-sqlite3 네이티브 모듈 로드·DB 878건 읽기 성공), MCP initialize 핸드셰이크(stdout 순수 JSON-RPC, stderr 비어있음)
+
+**변경 파일**
+
+- 없음(검증 전용, 산출물은 scratchpad에 격리). Worklog.md만 갱신.
+
+**검증**
+
+- 위 클린 설치 후 CLI/DB/MCP 전 항목 정상. 플랫폼: Windows x64, Node v24.14.1.
+- 미검증: macOS/Linux 네이티브 모듈 동작, README 내용-기능 정합성.
+
+**판단 근거**
+
+- publish는 되돌리기 어려운 외부 공개 작업이므로, 실제 업로드 전 `npm pack`→클린 설치로 배포물 무결성을 먼저 확인(validation-plan.md 배포물 구조 기준).
+
+**결과**
+
+- 완료: 배포물 검증 green, 이름 가용 확인. 남은 작업: README 정합성 점검, `npm login` 후 `npm publish --access public`, 타 OS 미검증 표기.
+
+---
+
 ### W-022 · trend-ranking-v2 worktree와 브랜치 정리
 
 **요청**
