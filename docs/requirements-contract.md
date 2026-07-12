@@ -237,13 +237,13 @@ sort: briefing | hot | latest | important | trending | discovery
 
 CLI 옵션은 `--ranking`, `--channel`, `--sort`입니다. 기존 source/type/hours/limit/no-refresh/json 옵션을 유지합니다.
 
-| channel | 허용 sort | 기본 sort |
-|---|---|---|
-| overview | briefing | briefing |
-| community | hot, latest | hot |
-| official | latest, important | latest |
-| repos | trending, discovery | trending |
-| research | hot, latest | hot |
+| channel   | 허용 sort           | 기본 sort |
+| --------- | ------------------- | --------- |
+| overview  | briefing            | briefing  |
+| community | hot, latest         | hot       |
+| official  | latest, important   | latest    |
+| repos     | trending, discovery | trending  |
+| research  | hot, latest         | hot       |
 
 - 잘못된 조합은 CLI 종료 코드 1 또는 MCP 입력 오류입니다. 조용히 다른 값으로 교정하지 않습니다.
 - `legacy`는 overview/briefing만 허용합니다.
@@ -322,12 +322,12 @@ AI NEWS HUB와 정확한 순위 일치는 승인 기준이 아닙니다.
 
 ## 14. 외부 자료 기록
 
-| URL | 제목 | 확인일 | 판단 및 적용 |
-|---|---|---|---|
-| https://raw.githubusercontent.com/anthropics/claude-code/main/feed.xml | Claude Code Changelog | 2026-07-10 | 공식 Atom 피드, `rss:claude-code` |
-| https://cursor.com/changelog/rss.xml | Cursor Changelog | 2026-07-10 | 공식 RSS, `rss:cursor` |
-| https://www.figma.com/release-notes/feed/atom.xml | Figma Release Notes | 2026-07-10 | 공식 Atom, AI 필터 후 `rss:figma` |
-| https://docs.github.com/en/rest/releases/releases#list-releases | GitHub Releases REST API | 2026-07-10 | Gemini CLI stable release 수집 |
-| https://www.reddit.com/dev/api/#GET_hot | Reddit API `GET hot` | 2026-07-10 | OAuth per-subreddit hot 수집 |
-| https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki | Reddit Data API Wiki | 2026-07-10 | OAuth, User-Agent, rate limit, 삭제·48시간 보존 |
-| https://redditinc.com/policies/data-api-terms | Reddit Data API Terms | 2026-07-10 | 콘텐츠 삭제·사용 범위 준수 |
+| URL                                                                                  | 제목                     | 확인일     | 판단 및 적용                                    |
+| ------------------------------------------------------------------------------------ | ------------------------ | ---------- | ----------------------------------------------- |
+| https://raw.githubusercontent.com/anthropics/claude-code/main/feed.xml               | Claude Code Changelog    | 2026-07-10 | 공식 Atom 피드, `rss:claude-code`               |
+| https://cursor.com/changelog/rss.xml                                                 | Cursor Changelog         | 2026-07-10 | 공식 RSS, `rss:cursor`                          |
+| https://www.figma.com/release-notes/feed/atom.xml                                    | Figma Release Notes      | 2026-07-10 | 공식 Atom, AI 필터 후 `rss:figma`               |
+| https://docs.github.com/en/rest/releases/releases#list-releases                      | GitHub Releases REST API | 2026-07-10 | Gemini CLI stable release 수집                  |
+| https://www.reddit.com/dev/api/#GET_hot                                              | Reddit API `GET hot`     | 2026-07-10 | OAuth per-subreddit hot 수집                    |
+| https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki | Reddit Data API Wiki     | 2026-07-10 | OAuth, User-Agent, rate limit, 삭제·48시간 보존 |
+| https://redditinc.com/policies/data-api-terms                                        | Reddit Data API Terms    | 2026-07-10 | 콘텐츠 삭제·사용 범위 준수                      |

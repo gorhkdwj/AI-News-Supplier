@@ -3,6 +3,7 @@
 주요 사용자 요청이 끝날 때마다 아래 형식으로 누적 기록한다. (규칙: CLAUDE.md 11절). 최신 항목을 위에 추가한다.
 
 ## 기록 형식
+
 ```
 ### W-00N · 작업 제목
 **요청** / **수행 작업** / **변경 파일** / **검증** / **판단 근거** / **결과**
@@ -13,23 +14,29 @@
 ### W-024 · 데스크톱 60분 주기 자동 fetch 스케줄 등록
 
 **요청**
+
 - ains fetch가 데스크톱에서 60분마다 자동 실행되도록 설정
 
 **수행 작업**
+
 - 기존 `ains schedule` 기능(W-010에서 구현)을 사용해 Windows 작업 스케줄러에 `ai-news-supplier-fetch` 작업 등록 (`ains schedule install --every 60`)
 - 등록된 실행 명령이 npm link 전역 설치본(`C:\nvm4w\nodejs\node_modules\ai-news-supplier` → 이 저장소 Junction)의 `dist/cli/index.js`를 가리킴을 확인
 
 **변경 파일**
+
 - 없음 (OS 작업 스케줄러 등록만 수행. Worklog.md 기록 추가)
 
 **검증**
+
 - `schtasks /Query /V`로 등록 명령·반복 주기(1시간) 확인
 - 등록된 명령을 그대로 1회 수동 실행: 종료 코드 0, 보존 정책 정리 1건 수행. arxiv 소스 1건이 시간 초과(30000ms)로 실패했으나 전체 수집은 정상 진행(소스 격리 불변 규칙대로 동작)
 
 **판단 근거**
+
 - 전역 `ains`가 npm link로 이 저장소 dist를 가리키므로, 저장소를 옮기거나 dist를 삭제하면 스케줄이 조용히 실패함. 해제는 `ains schedule uninstall`
 
 **결과**
+
 - 완료: 60분 주기 자동 수집 활성화
 - 남은 작업: 없음 (arxiv 시간 초과는 일시적 네트워크 지연으로 추정, 반복 시 T-ID 기록 필요)
 
@@ -609,10 +616,13 @@
 - 전환 보류: 실제 warmup·shadow와 정량/수동 승인 게이트를 통과하기 전까지 legacy 기본 유지
 
 ### W-013 · Story Sighting 스키마 v2 마이그레이션과 백업 게이트
+
 **요청**
+
 - 기존 Story·FTS·점수/학습 이력을 보존하면서 `source_sightings`와 `metric_snapshots`를 추가하고, 파일 v1 DB의 사전 백업·검증·원자적 롤백을 구현
 
 **수행 작업**
+
 - 스키마 버전을 2로 올리고 Sighting/Snapshot 테이블, CHECK·UNIQUE·부분 유일 인덱스·연쇄 외래키를 추가
 - 기존 item마다 결정적 source key와 24자리 `sightingId`를 사용한 primary `legacy_unverified` Sighting을 백필하고 legacy 시간 정밀도는 모두 `inferred`로 처리
 - 파일 v1 DB를 `VACUUM INTO`로 sibling 백업한 뒤 integrity, user_version, item count를 검증하고, 백업 생성/검증 실패 시 DDL 전에 중단
@@ -621,6 +631,7 @@
 - v1 보존, FTS 트리거, source key 우선순위, discussion/activity/score kind, 빈 snapshot, FK와 제약을 테스트
 
 **변경 파일**
+
 - `src/core/db/migrations.ts`
 - `src/core/db/connection.ts`
 - `src/core/normalize.ts`
@@ -630,6 +641,7 @@
 - `out/sdd/task-2a-report.md`(Git 제외 보고서)
 
 **검증**
+
 - `npm test -- tests/core/migrations.test.ts`: 13개 통과
 - `npm test`: 54개 통과
 - `npm run typecheck`: 통과
@@ -637,68 +649,87 @@
 - 대상 파일 Prettier 검사 및 `git diff --check`: 통과
 
 **판단 근거**
+
 - `docs/requirements-contract.md` 2~3절과 `docs/plans/2026-07-10-trend-ranking-v2-plan.md` V2-1 계약을 우선 적용
 - 기존 저장 로직이 누락 게시 시각을 수집 시각으로 치환하므로 legacy 행의 실제 정밀도를 증명할 수 없어 모두 `inferred`로 백필
 
 **결과**
+
 - 완료: 스키마 v2, legacy 백필, 파일 백업/검증 게이트, 롤백·미래 버전 방어
 - 남은 작업: Task 2B에서 live Sighting upsert와 수집 계약 연결
 
 ### W-012 · AI NEWS HUB 벤치마크와 유형별 랭킹 v2 계약 확정
+
 **요청**
+
 - AI NEWS HUB의 핫레포·커뮤니티·공식 업데이트를 비교하고, 단순 최신성·전역 hotness 문제를 해결하는 수정 계획을 구현 가능한 계약으로 확정
 
 **수행 작업**
+
 - AI NEWS HUB 공개 화면/API를 GitHub Trending·HN·Reddit·공식 RSS/원문과 교차 확인
 - 현재 ains의 수집 후보, 점수식, canonical 중복, CLI/MCP 노출을 코드·계약·테스트 기준으로 감사
 - Story/Sighting/Snapshot 데이터 모델, Repo·Community·Official·Research 랭킹 공식, Overview·호환 인터페이스, warmup/shadow 게이트 확정
 - 공식 RSS/Atom/API가 확인된 Claude Code, Cursor, Figma, Gemini CLI와 Reddit 최신 정책을 외부 자료로 기록
 
 **변경 파일**
+
 - `docs/plans/2026-07-10-trend-ranking-v2-plan.md`
 - `docs/requirements-contract.md`
 - `Decisionlog.md`
 - `Worklog.md`
 
 **검증**
+
 - 문서 간 스키마·공식·CLI/MCP 옵션·보존 기간·롤아웃 수치 정합성을 `rg`와 `git diff --check`로 확인
 - 문서 선행 단계이므로 런타임 테스트는 실행하지 않음
 
 **판단 근거**
+
 - 코드보다 기준 계약을 먼저 갱신해야 한다는 프로젝트 원칙과, 타입마다 서로 다른 화제성 신호를 사용해야 한다는 벤치마크 결론
 
 **결과**
+
 - 완료: 구현이 의사결정 없이 진행 가능한 v2 계약과 단계 계획 확정
 - 남은 작업: 스키마 v2부터 fixture 기반 TDD로 구현하고 7일 warmup·7일 shadow 수행
 
 ### W-011 · 로컬 전역 설치 사용성 확인 및 문서 보강
+
 **요청**
+
 - API 키 발급 없이 어떻게 동작하는지, 로컬 터미널에 설치해 바로 쓸 수 있는지 확인
 
 **수행 작업**
+
 - 인증 실태 설명: 7소스 중 6종(HN·GitHub·RSS·HF·arXiv·DEV.to)은 공개 API/RSS로 키 불필요, Reddit만 키 게이트로 비활성
 - `npm link`로 전역 설치 후 프로젝트 밖에서 ains 동작 검증(9소스 실수집)
 - README에 전역 설치(npm link) 안내 및 PowerShell 쉼표 리스트 따옴표 팁 추가
 
 **변경 파일**
+
 - README.md
 
 **검증**
+
 - 프로젝트 밖 폴더에서 `ains fetch` → 9소스 정상(HN 66/GitHub 60/HF 55/arXiv 75/DEV.to 23/RSS 4종)
 - PowerShell 쉼표 이슈 재현: `--source hackernews,arxiv`(배열 해석 실패) vs `--source "hackernews,arxiv"`(정상). 도구 버그 아님(셸 특성)
 
 **판단 근거**
+
 - 실사용 진입 장벽(설치·인증)을 실제로 확인해 문서화
 
 **결과**
+
 - 완료: 전역 설치로 즉시 사용 가능 확인, 문서 보강
 - 참고: npm link는 로컬 개발 심링크(커밋 대상 아님). npm 레지스트리 배포는 여전히 미수행
 
 ### W-010 · S5 스케줄러·보존·배포 준비 (구현 목표 완주)
+
 **요청**
+
 - S5 단계(스케줄러 + retention + doctor 완성 + README + 배포 준비) 구현 및 검증
 
 **수행 작업**
+
 - scheduler/index.ts: Windows(schtasks)·unix(crontab) 주기 수집 등록/해제/상태. 셸 없는 execFileSync 사용(보안)
 - CLI `schedule install/uninstall/status`, `config path/show/init/edit`
 - retention을 refreshStale 시작에 연결(retentionDays 초과 항목 + 30일 초과 fetch_log 정리)
@@ -706,10 +737,12 @@
 - README 전면 작성(실사용 기능만: 설치/CLI/MCP 등록/자동수집/설정/프라이버시), .gitattributes(LF 정규화)
 
 **변경 파일**
+
 - src/scheduler/index.ts, src/cli/commands/{schedule,config}.ts, src/cli/{index,commands/doctor}.ts, src/core/refresh.ts
 - README.md, .gitattributes
 
 **검증**
+
 - typecheck 통과, 테스트 43개 통과, lint 0
 - 라이브(Windows): schedule install → schtasks 등록 확인 → status "등록됨" → uninstall → "미등록" 라이프사이클
 - config init/path/show, doctor(보존·스케줄·전 소스) 정상
@@ -717,17 +750,22 @@
 - **클린 설치 검증**: tarball을 빈 폴더에 설치 → better-sqlite3 프리빌드 정상 로드(DB 무결성 ok) → ains doctor 전 항목 정상 → .cmd 래퍼 --version=0.0.1
 
 **판단 근거**
+
 - 계획서 S5 완료 조건(schedule 라이프사이클, 클린 설치 후 doctor green) 충족. 목표(S0~S5 단계별 검증 완주) 달성.
 
 **결과**
+
 - 완료: S5 및 전체 MVP(수집 7종 + MCP 9도구/3프롬프트 + CLI + 학습 + 스케줄러)
 - 미검증 범위: macOS/Linux cron 실기(Windows schtasks만 실기 검증, unix는 로직만). github/devto/huggingface/rss 수집기 단위 테스트(라이브+통합으로 커버). npm 레지스트리 실제 배포는 미수행(pack 검증까지)
 
 ### W-009 · S4 학습 기능
+
 **요청**
+
 - S4 단계(학습 후보 발굴/세션 설계/이력 + MCP 도구 4종 + learn 프롬프트 + CLI) 구현 및 검증
 
 **수행 작업**
+
 - core/learning/topics.ts: 룰 기반 용어 추출(엔티티 사전~80개, 별칭, 블록리스트, 버전형 토큰, arXiv 카테고리 태그 제외)
 - core/learning/candidates.ts: 용어 클러스터링(60% 겹침 병합) + learnScore(novelty×(2×sourceSpread+hotSum+velocity+ln(1+n))) + 증거 버킷 + 채택 필터
 - core/learning/session.ts: FTS 증거 수집 + 레벨/시간 파라미터 지시문 템플릿(브리핑→개념→실습→점검→추가자료→record 안내)
@@ -736,29 +774,36 @@
 - CLI: learn(candidates 기본/session/record), history
 
 **변경 파일**
+
 - src/core/learning/{topics,candidates,session}.ts, src/core/store/learningStore.ts
 - src/mcp/{tools,prompts}.ts, src/cli/commands/{learn,history}.ts, src/cli/{format,index}.ts
 - tests/core/learning.test.ts, tests/mcp/smoke.test.ts(9종+프롬프트3+record→history)
 
 **검증**
+
 - typecheck 통과, 테스트 43개 통과, lint 0
 - 학습 코어 단위: 3소스 등장 토픽(moe) 최상위 후보, 기록 후 includeLearned=false 제외, 세션 지시문 생성
 - 라이브: learn candidates가 agentic/transformers/openai/gpt/reasoning 발굴, record 후 해당 토픽 제외, history 표시
 - MCP 스모크: 학습 도구 4종 노출, record_learning→get_learning_history 반영
 
 **판단 근거**
+
 - 계획서 S4 완료 조건(후보→세션→기록→제외 순환) 충족. 도구 자체 LLM 미호출(지능은 에이전트).
 - 후보 품질 개선: arXiv 카테고리 태그(cs.AI 등) 토픽 제외
 
 **결과**
+
 - 완료: 학습 기능 전체(코어+MCP+CLI)
 - 남은 작업: S5 스케줄러/retention/doctor완성/README/배포
 
 ### W-008 · S3 MCP 서버
+
 **요청**
+
 - S3 단계(MCP stdio 서버 + 데이터 도구 + ains mcp) 구현 및 검증
 
 **수행 작업**
+
 - MCP 데이터 도구 5종(get_trends, search_news, get_item, refresh_sources, get_source_status)을 zod 입력 스키마로 등록. structuredContent+text 반환
 - 프롬프트 trend-briefing 등록(learn 계열은 S4)
 - mcp/run.ts(startMcpServer), mcp/server.ts(bin 진입), cli `ains mcp` 명령
@@ -766,55 +811,69 @@
 - stdout 위생: 서버 경로는 logger(stderr)만 사용
 
 **변경 파일**
+
 - src/mcp/{tools,prompts,run,server}.ts, src/cli/commands/mcp.ts, src/cli/index.ts, tsup.config.ts
 - tests/mcp/smoke.test.ts (tsx로 소스 stdio 실행)
 
 **검증**
+
 - typecheck 통과(zod 4가 MCP SDK 1.29 ZodRawShapeCompat와 호환 확인), 테스트 36개 통과, lint 0
 - MCP stdio 스모크: Client 연결 → listTools 5종 → callTool get_trends가 시드 항목을 structuredContent로 반환 → listPrompts에 trend-briefing
 - 빌드: dist/mcp/server.js 생성 확인
 
 **판단 근거**
+
 - 계획서 S3 완료 조건(MCP 클라이언트에서 도구 호출) 충족. 소스 disabled 시드로 네트워크 없이 통합 검증.
 
 **결과**
+
 - 완료: MCP 서버 + 데이터 도구 5종
 - 남은 작업: S4 학습 기능(도구 4종 + learn 프롬프트)
 - 미검증 범위: 빌드된 dist 서버를 실제 Claude Code에 등록한 end-to-end는 수동 확인 필요(스모크로 프로토콜/도구는 검증됨)
 
 ### W-007 · S2 수집기 완성
+
 **요청**
+
 - S2 단계(나머지 수집기 6종 + registry + rank 검증) 구현 및 단계별 검증
 
 **수행 작업**
+
 - 수집기 6종: github(search API, 토큰 선택), huggingface(models+daily_papers), arxiv(Atom XML, fast-xml-parser, 버전 접미사 제거 dedup), devto(태그+반응수+키워드 필터), reddit(OAuth client_credentials, 키 게이트, 토큰 메모리 캐시), rss(피드별 인스턴스+조건부 GET+필드 정규화)
 - http 클라이언트에 postForm 추가(reddit OAuth). registry를 STATIC_COLLECTORS + 동적 RSS(enabledCollectors/allCollectors)로 확장. doctor를 allCollectors 기반으로 갱신
 - 각 API 응답 형태를 라이브로 실물 확인 후 파서 작성(계획서 재확인 원칙)
 
 **변경 파일**
+
 - src/collectors/{github,huggingface,arxiv,devto,reddit,rss}.ts, registry.ts
 - src/core/http.ts(postForm), src/core/config.ts(metaai 제거), src/cli/commands/doctor.ts
 - tests: collectors/{arxiv,reddit}, core/rank, fixtures/{arxiv.atom.xml,reddit-hot.json}, refresh 격리 테스트, stubHttp postForm
 
 **검증**
+
 - typecheck 통과, 테스트 33개 통과, lint 0
 - 라이브 fetch --force: hackernews 63, github 60, huggingface 55, arxiv 75, devto 24, rss:openai/deepmind/googleai/hfblog 정상 수집. reddit은 키 없어 비활성(정상)
 - trends에 HN/RSS/devto/github 혼합 노출(인터리브 동작)
 - 격리 검증: 한 소스(github) 실패해도 hackernews 정상 저장
 
 **판단 근거**
+
 - 계획서 S2 완료 조건(전 소스 수집, 소스 1개 고장 시 나머지 성공) 충족. T-001/T-002/T-003 해결.
 
 **결과**
+
 - 완료: 수집기 7종(HN+6) 가동, 랭킹 인터리브
 - 남은 작업: S3 MCP 서버
 - 미검증 범위: github/devto/huggingface/rss 단위 테스트 미작성(라이브 통합+매핑 단순성으로 커버, 추후 fixture 보강 가능). reddit 라이브(자격증명 없음, fixture 테스트로 로직만 검증)
 
 ### W-006 · S1 워킹 스켈레톤 구현
+
 **요청**
+
 - S1 단계(DB+HN 수집기+CLI) 구현 및 단계별 검증
 
 **수행 작업**
+
 - 코어: types(NewsItem/CollectedItem/ItemType), paths(AINS_HOME), logger(stderr 전용), config(zod 전체 스키마, prefault로 sparse override), normalize(canonical URL+sha256 id)
 - DB: connection(better-sqlite3 WAL), migrations(전체 스키마 DDL, user_version 관리, FTS5+트리거)
 - store: itemStore(upsert/dedup/FTS검색/score_history/purge), fetchLog(source_state, fetch_log)
@@ -824,29 +883,36 @@
 - cli: shared, format, commands(trends/fetch/search/show/doctor), index
 
 **변경 파일**
+
 - src/core/{types,paths,logger,config,normalize,http,rank,refresh}.ts, src/core/db/{connection,migrations}.ts, src/core/store/{itemStore,fetchLog}.ts
 - src/collectors/{types,keywords,hackernews,registry}.ts
 - src/cli/{shared,format,index}.ts, src/cli/commands/{trends,fetch,search,show,doctor}.ts
 - tests/: normalize/itemStore/migrations/refresh, collectors/hackernews, helpers/stubHttp, fixtures/hn-search.json
 
 **검증**
+
 - typecheck 통과, 단위/통합 테스트 22개 통과, lint 0
 - 라이브 검증(격리 AINS_HOME): `fetch` 63건 수집 → 재실행 시 TTL skip → `trends` hotness 순 출력 → `search`/`show`/`doctor` 정상
 - 실패 격리 검증: 500 응답 시 예외 없이 status=error 보고, DB 무변경
 
 **판단 근거**
+
 - 계획서 S1 완료 조건(수집→축적→조회 파이프라인 관통, dedup+TTL skip) 충족. 계층별 typecheck로 충돌 조기 차단.
 - 스키마 버전은 user_version으로 관리(계획서 meta.schema_version 대비 부트스트랩 견고성 개선).
 
 **결과**
+
 - 완료: S1 워킹 스켈레톤. T-001(HN points 400) 해결.
 - 남은 작업: S2 나머지 수집기 6종 + keywords 광범위 적용 + rank 미세조정
 
 ### W-005 · S0 스캐폴드 구현
+
 **요청**
+
 - 구현 목표(S0~S5) 설정 후 단계별 검증하며 진행 (goal)
 
 **수행 작업**
+
 - package.json(ESM, bin: ains/ains-mcp, engines node≥20, scripts) 작성
 - 런타임 의존성 설치: @modelcontextprotocol/sdk 1.29, better-sqlite3 12.11(프리빌드로 Windows 네이티브 빌드 문제 없음 확인), commander 15, rss-parser, fast-xml-parser, zod 4
 - 개발 의존성 설치: typescript, tsup, vitest, eslint, prettier, typescript-eslint 등
@@ -855,11 +921,13 @@
 - src/.gitkeep, tests/.gitkeep 제거(실제 파일 생성됨)
 
 **변경 파일**
+
 - package.json, package-lock.json, tsconfig.json, tsup.config.ts, vitest.config.ts, eslint.config.js, .prettierrc.json
 - src/cli/index.ts, src/global.d.ts, tests/smoke.test.ts
 - src/.gitkeep, tests/.gitkeep (삭제)
 
 **검증**
+
 - `npm run build`: dist/cli/index.js 생성 성공(bin 경로 일치 확인)
 - `node dist/cli/index.js --version`: 0.0.1 출력
 - `npm run typecheck`(tsc --noEmit): 통과
@@ -867,99 +935,129 @@
 - `npm run lint`(eslint): 오류 0
 
 **판단 근거**
+
 - 계획서 S0 완료 조건(빌드 산출물 실행 + 테스트 통과) 충족. 버전은 package.json 단일 진실 원천에서 빌드 시 주입해 문서-코드 정합성 유지.
 
 **결과**
+
 - 완료: S0 스캐폴드, 빌드·타입·테스트·린트 파이프라인 동작
 - 남은 작업: S1 워킹 스켈레톤(DB+HN 수집기+CLI)
 
 ### W-004 · 초기 커밋 및 원격 푸시
+
 **요청**
+
 - 현재 상태를 git 커밋·푸시
 
 **수행 작업**
+
 - 전체 파일 스테이징(out/은 .gitignore로 제외 확인) 후 root-commit 생성, origin/main 푸시 및 추적 설정
 
 **변경 파일**
+
 - 커밋 c3217e7: 15개 파일(운영 파일 6, docs 6, .gitkeep 3), 653줄
 
 **검증**
+
 - git push 성공 및 `main -> main` 추적 설정 출력 확인. 코드가 없어 테스트 실행은 해당 없음.
 
 **판단 근거**
+
 - CLAUDE.md 10절 Git 원칙(주요 단계 종료 시 commit→push)
 
 **결과**
+
 - 완료: 원격 저장소에 초기 상태 반영
 - 남은 작업: S0 스캐폴드 시작(사용자 승인 대기)
 
 ### W-003 · plan 문서를 docs/plans로 통합
+
 **요청**
+
 - docs/ 하위의 plan 파일들을 docs/plans/ 하위로 이동
 
 **수행 작업**
+
 - project-plan.md, implementation-plan.md, validation-plan.md를 docs/plans/로 이동
 - requirements-contract.md는 계획이 아닌 기준 계약 문서이므로 docs/ 유지(사용자에게 보고)
 - 깨진 참조 경로 갱신: CLAUDE.md, requirements-contract.md, project-plan.md, Worklog.md
 
 **변경 파일**
+
 - docs/plans/{project-plan, implementation-plan, validation-plan}.md (이동)
 - CLAUDE.md, docs/requirements-contract.md, docs/plans/project-plan.md, Worklog.md (경로 수정)
 
 **검증**
+
 - grep으로 `docs/(implementation|project|validation)-plan` 잔여 참조 전수 확인 후 수정 완료
 
 **판단 근거**
+
 - 계획 문서를 한 폴더에 모아 탐색성 개선(사용자 지시)
 
 **결과**
+
 - 완료: docs/plans에 계획 문서 4개 통합
 - 남은 작업: 없음
 
 ### W-002 · 프로젝트 운영 체계 셋업
+
 **요청**
+
 - 확정 계획(docs/plans/2026-07-09-ai-news-supplier-plan.md)을 반영한 프로젝트 운영 구조 셋업
 
 **수행 작업**
+
 - CLAUDE.md(작업 헌법), README.md, Worklog/Decisionlog/Troubleshootinglog, .gitignore 생성
 - docs/requirements-contract.md 및 docs/plans/{project-plan, implementation-plan, validation-plan}.md 생성(계획 내용으로 채움)
 - src/, tests/, tools/, out/, docs/references/ 폴더 생성
 
 **변경 파일**
+
 - CLAUDE.md, README.md, Worklog.md, Decisionlog.md, Troubleshootinglog.md, .gitignore
 - docs/requirements-contract.md, docs/plans/project-plan.md, docs/plans/implementation-plan.md, docs/plans/validation-plan.md
 - src/, tests/, tools/, out/, docs/references/ (.gitkeep)
 
 **검증**
+
 - 파일 생성 및 구조 확인만 수행. 구현 미착수.
 
 **판단 근거**
+
 - 다세션 진행 프로젝트에서 판단·구조 일관성을 위해 운영 체계를 구현보다 먼저 적용
 
 **결과**
+
 - 완료: 운영 파일 생성
 - 남은 작업: 초기 커밋/푸시, S0 스캐폴드부터 구현 시작
 
 ### W-001 · 방향 전환 및 구현 계획 확정
+
 **요청**
+
 - 기존 AI Product Lab(PM 특화 학습 서비스) PRD 전면 폐기, ai-news-supplier로 방향 전환 및 계획 수립
 
 **수행 작업**
+
 - 브레인스토밍으로 핵심 결정 확정(로컬 우선, SQLite 축적, 소스 최대 구현, TTL 온디맨드+스케줄러 옵션, 룰 기반 학습 기능, TS/Node 스택)
 - 확정 계획서 작성: docs/plans/2026-07-09-ai-news-supplier-plan.md
 - 기존 docs/PRD/ 문서 3개 삭제
 - git 초기화, origin(https://github.com/gorhkdwj/AI-News-Supplier.git) 연결, main 브랜치 설정
 
 **변경 파일**
+
 - docs/plans/2026-07-09-ai-news-supplier-plan.md (신규)
 - docs/PRD/ 전체 삭제
 
 **검증**
+
 - 문서 작업으로 코드 검증 해당 없음. git remote -v로 원격 연결 확인.
 
 **판단 근거**
+
 - 사용자가 원하는 핵심 가치가 "PM 학습 콘텐츠"가 아니라 "AI 소식을 에이전트에 공급"으로 재정의됨
 
 **결과**
+
 - 완료: 계획 확정, 저장소 연결
 - 남은 작업: 운영 체계 셋업, 구현 시작
