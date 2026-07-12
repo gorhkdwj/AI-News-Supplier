@@ -4,7 +4,8 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'out/**', 'coverage/**'],
+    // .remember는 로컬 세션 메모리 도구의 산출물(저장소 코드 아님)
+    ignores: ['dist/**', 'node_modules/**', 'out/**', 'coverage/**', '.remember/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -19,7 +20,8 @@ export default tseslint.config(
           patterns: [
             {
               group: ['**/cli/**', '**/mcp/**'],
-              message: 'core/collectors는 cli/mcp를 import할 수 없습니다 (통로 의존 금지, CLAUDE.md 3절).',
+              message:
+                'core/collectors는 cli/mcp를 import할 수 없습니다 (통로 의존 금지, CLAUDE.md 3절).',
             },
           ],
         },

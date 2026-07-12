@@ -21,6 +21,9 @@ secrets/
 *.db-wal
 *.db-shm
 
+# 로컬 세션 메모리 도구 산출물
+.remember/
+
 # OS·에디터
 .DS_Store
 Thumbs.db

@@ -1,6 +1,6 @@
 {
   "name": "ai-news-supplier",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "AI 소식(커뮤니티·공식 업데이트·핫레포·핫모델·논문)을 수집해 로컬에 축적하고 MCP/CLI로 LLM 에이전트에 공급하는 로컬 우선 도구",
   "type": "module",
   "engines": {
@@ -12,7 +12,8 @@
   },
   "files": [
     "dist",
-    "docs/index.html"
+    "docs/index.html",
+    "README.ko.md"
   ],
   "scripts": {
     "build": "tsup",

@@ -65,6 +65,41 @@
 
 ---
 
+### W-029 · 0.2.0 묶음 릴리스 준비 (schedule 견고화·업데이트 안내·피드 문서화·영어 README)
+
+**요청**
+
+- 개선사항을 묶어 한 번에 publish (D-007 묶음 릴리스 정책에 따라 0.2.0)
+
+**수행 작업**
+
+- schedule 견고화: Windows 등록을 wscript 숨김 래퍼(fetch-hidden.vbs)로 전환해 콘솔 창 깜빡임 제거, 설치 내용을 schedule.json manifest로 기록, doctor가 구버전 방식·실행 대상 유실·래퍼 유실을 구분 경고 (src/scheduler/index.ts, doctor.ts)
+- 업데이트 안내: CLI 종료 후 stderr로 새 버전 안내. 24시간 캐시, 2초 타임아웃, 실패 침묵, AINS_NO_UPDATE_CHECK/CI 옵트아웃, MCP 프로세스 제외 (src/cli/updateNotice.ts, index.ts)
+- 커스텀 RSS 피드 README 노출(대체 방식 주의 포함), docs/index.html에 schedule·업데이트 안내 추가
+- README 이중화: 영어 README.md(npm 첫 화면) + 한국어 README.ko.md, 상호 언어 링크, files에 ko 추가
+- 부수: eslint ignore에 .remember/**, .gitignore에 .remember/ 추가(로컬 도구 산출물)
+
+**변경 파일**
+
+- src/scheduler/index.ts, src/cli/commands/doctor.ts, src/cli/index.ts, src/cli/updateNotice.ts(신규), tests/core/scheduler.test.ts(신규 11), tests/cli/updateNotice.test.ts(신규 16), README.md, README.ko.md(신규), docs/index.html, package.json(0.2.0, files), eslint.config.js, .gitignore, Decisionlog.md(D-007), Worklog.md
+
+**검증**
+
+- build·typecheck·lint 통과, 테스트 32파일·226개 통과(신규 27개 포함)
+- npm pack: 9파일(LICENSE·양어 README 포함), 298.2kB
+- 실기(Windows): doctor가 기존 구버전 스케줄을 "재등록 권장"으로 감지 → 재등록 후 "등록됨(60분마다)" → 작업이 wscript 래퍼로 등록됨 확인 → 수동 실행 결과 0
+- 미검증: 스케줄 Last Result 0은 wscript 성공 기준(내부 fetch 성공은 다음 주기의 doctor 마지막성공으로 확인 예정). 업데이트 안내 stderr 실출력은 구버전 설치 환경이 없어 테스트로만 검증.
+
+**판단 근거**
+
+- 창 숨김은 schtasks가 콘솔 앱을 세션에서 띄우는 구조상 래퍼가 표준 해법. manifest 방식은 OS 역파싱보다 단순·크로스 플랫폼·테스트 가능. 업데이트 안내는 stdout 순수성(MCP)·JSON 파이프 안전(stderr)·LLM 무호출 원칙과 충돌하지 않게 설계.
+
+**결과**
+
+- 완료: 0.2.0 릴리스 준비. 남은 작업: 커밋·푸시 → CI green → 사용자 publish
+
+---
+
 ### W-028 · 최소 Node 버전 22.12 상향과 0.1.1 준비
 
 **요청**
