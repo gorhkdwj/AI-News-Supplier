@@ -16,7 +16,7 @@ export function registerDoctor(program: Command): void {
     .action(() => {
       const lines: string[] = [];
       const nodeMajor = Number(process.versions.node.split('.')[0]);
-      lines.push(`Node ${process.version} ${nodeMajor >= 20 ? 'OK' : '(>=20 필요)'}`);
+      lines.push(`Node ${process.version} ${nodeMajor >= 22 ? 'OK' : '(>=22.12 필요)'}`);
       lines.push(`데이터 경로 : ${getDataDir()}`);
       lines.push(`DB 파일     : ${getDbPath()}`);
 

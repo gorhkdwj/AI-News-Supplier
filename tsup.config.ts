@@ -12,7 +12,7 @@ export default defineConfig({
     'mcp/server': 'src/mcp/server.ts',
   },
   format: ['esm'],
-  target: 'node20',
+  target: 'node22',
   platform: 'node',
   outDir: 'dist',
   clean: true,

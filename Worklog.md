@@ -35,6 +35,36 @@
 
 ---
 
+### W-027 · LICENSE 파일 추가와 3-OS CI 구축
+
+**요청**
+
+- 서비스 한계 분석에서 도출한 즉시 항목 2개(LICENSE, CI) 진행
+
+**수행 작업**
+
+- MIT 라이선스 전문 LICENSE 파일 추가(package.json의 license/author 선언과 일치, npm은 LICENSE를 자동 포함하므로 files 수정 불필요)
+- GitHub Actions CI 신설(.github/workflows/ci.yml): ubuntu/macos/windows × Node 20/22/24 매트릭스에서 npm ci→build→typecheck→lint→test, 별도 pack-smoke job 3-OS에서 tarball 전역 설치 후 `ains --version`/`ains doctor` 실행
+- 1차 푸시가 workflow scope 없는 fine-grained PAT으로 거부됨 → 사용자가 토큰에 Workflows 권한(Read and write) 추가 후 푸시 성공
+
+**변경 파일**
+
+- LICENSE (신규), .github/workflows/ci.yml (신규), Worklog.md
+
+**검증**
+
+- CI 실행 결과로 검증(run 29183343737). npm pack이 prepublishOnly를 실행하지 않는 점을 반영해 smoke job에 빌드 단계 명시.
+
+**판단 근거**
+
+- LICENSE 부재는 법적 공백, CI 부재는 macOS/Linux 미검증(W-026 한계)의 유일한 자동 해소 수단. 테스트가 fixture 기반이라 CI 신호가 네트워크에 오염되지 않음.
+
+**결과**
+
+- 완료: 커밋 5ff24f6 푸시. CI 결과는 확인 후 추기.
+
+---
+
 ### W-026 · npm 최초 배포(0.1.0)와 설치 문서 전환
 
 **요청**

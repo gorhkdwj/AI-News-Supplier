@@ -17,7 +17,7 @@
 
 ## 5분 빠른 시작
 
-Node.js 20 이상이 필요합니다. npm 레지스트리에서 전역 설치합니다.
+Node.js 22.12 이상이 필요합니다. npm 레지스트리에서 전역 설치합니다.
 
 ```bash
 npm install -g ai-news-supplier
