@@ -195,6 +195,8 @@ npm pack
 
 CI가 Linux·macOS·Windows × Node 22·24에서 테스트를 실행합니다.
 
+버전별 변경 내역은 [CHANGELOG.md](CHANGELOG.md)와 [GitHub Releases](https://github.com/gorhkdwj/AI-News-Supplier/releases)에서 확인할 수 있습니다.
+
 이슈를 등록할 때는 운영체제, Node.js 버전, `ains --version`, `ains doctor` 결과와 재현 명령을 포함하십시오. 토큰, 설정 파일 원문, 개인 데이터베이스는 첨부하지 마십시오.
 
 개발 기준은 [요구사항 계약](docs/requirements-contract.md)과 [구현 계획](docs/plans/implementation-plan.md)을 따릅니다.

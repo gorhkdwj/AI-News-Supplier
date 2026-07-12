@@ -11,6 +11,35 @@
 
 ---
 
+### D-011 · 릴리스마다 CHANGELOG와 GitHub Release 노트를 남긴다 (2026-07-12)
+
+**상황**
+
+- 사용자가 업데이트 안내를 받아도 "무엇이 바뀌었는지" 알 방법이 커밋 이력뿐이었음. 실사용자(지인) 발생으로 변경 내역 전달 채널이 필요해짐.
+
+**검토한 선택지**
+
+1. 커밋 이력으로 충분 (현상 유지)
+2. CHANGELOG.md 파일 + 버전별 GitHub Release 노트 병행
+
+**결정**
+
+- 2안. Keep a Changelog 형식의 CHANGELOG.md(영어, README.md와 동일 기조)를 저장소에 유지하고, publish마다 같은 내용을 GitHub Release(v<버전> 태그)로 게시한다. 0.1.0·0.2.0은 소급 작성.
+
+**근거**
+
+- 업데이트 경험의 3요소(발견-신뢰-실행) 중 "신뢰(변경 내역)"가 공백이었음. CHANGELOG는 저장소·npm에서, Release는 GitHub 알림 구독자에게 각각 닿는 상호보완 채널.
+
+**영향**
+
+- 릴리스 절차에 두 단계 추가: publish 전 CHANGELOG 항목 작성 → publish 후 `git tag v<버전>` + `gh release create`. mirror-data(prerelease)는 버전 릴리스 목록과 분리 유지.
+
+**재검토 조건**
+
+- 릴리스 빈도가 높아져 수동 작성이 부담되면 태그 기반 자동 생성(release-please 류) 검토.
+
+---
+
 ### D-010 · 0.2.0 즉시 publish, v2 기본 전환은 0.3.0으로 이동 (2026-07-12)
 
 **상황**

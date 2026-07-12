@@ -72,6 +72,37 @@
 
 ---
 
+### W-035 · CHANGELOG 도입과 GitHub Release 노트 소급 작성 (D-011)
+
+**요청**
+
+- 업데이트 내역을 파일로 보관하고 GitHub Release에도 패치 내역을 남기자는 제안 → 채택
+
+**수행 작업**
+
+- CHANGELOG.md 신설(Keep a Changelog 형식, 영어): 0.1.0(최초 공개)·0.2.0(Breaking/Added/Changed/Infrastructure) 소급 작성, compare 링크 포함
+- v0.1.0 태그를 publish 시점 커밋(cf23e5f, version 0.1.0 확인)에 소급 생성·푸시
+- GitHub Release 2건 생성: v0.1.0(최초 릴리스 요약), v0.2.0(Breaking 강조 + Windows 업그레이드 주의 + CHANGELOG 링크)
+- 양어 README 개발 절에 CHANGELOG·Releases 링크 추가, D-011 결정 기록(릴리스 절차에 CHANGELOG 작성 + 태그 + Release 생성 단계 추가)
+
+**변경 파일**
+
+- CHANGELOG.md(신규), README.md, README.ko.md, Decisionlog.md(D-011), Worklog.md (+ GitHub 태그 v0.1.0, Release 2건 — 저장소 외부 산출물)
+
+**검증**
+
+- 태그 대상 커밋의 package.json version=0.1.0 확인 후 태깅. Release 2건 URL 생성 확인. mirror-data는 prerelease라 버전 릴리스 목록과 분리 유지됨
+
+**판단 근거**
+
+- 업데이트 경험 3요소 중 "무엇이 바뀌었나"(신뢰) 공백 해소. 소급 작성은 Worklog·커밋 기록이 정확히 남아 있어 가능했음
+
+**결과**
+
+- 완료. 이후 릴리스 절차: CHANGELOG 항목 → publish → git tag → gh release create (D-011)
+
+---
+
 ### W-034 · Claude 데스크톱 앱(Cowork) MCP 연결 해결과 문서화
 
 **요청**

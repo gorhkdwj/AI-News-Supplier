@@ -193,6 +193,8 @@ npm pack
 
 CI runs the test suite on Linux, macOS, and Windows with Node 22 and 24.
 
+Version history lives in [CHANGELOG.md](CHANGELOG.md) and on the [GitHub Releases](https://github.com/gorhkdwj/AI-News-Supplier/releases) page.
+
 When filing an issue, include your OS, Node.js version, `ains --version`, `ains doctor` output, and reproduction commands. Never attach tokens, raw config files, or your personal database.
 
 ## License
