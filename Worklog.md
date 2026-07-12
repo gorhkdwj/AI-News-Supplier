@@ -72,6 +72,48 @@
 
 ---
 
+### W-031 · 정적 스냅샷 미러 후보 검토: 공식 RSS 약관 조사
+
+**요청**
+
+- 정적 스냅샷 미러(D-009 후보) 논의 중 공식 RSS 7종의 재배포 약관 확인. Reddit은 "정책상 미러 제외 → 완전성 미보장"으로 표기하기로 방향 확인
+
+**수행 작업**
+
+- 공식 RSS 운영 주체 6곳(OpenAI, Google, Hugging Face, Cursor, Figma, Anthropic)의 약관·라이선스를 웹 검색·원문 확인. 결과: **재배포 명시 허용 없음**(Cursor는 reproduce/harvest 명시 금지, Claude Code 저장소는 All rights reserved — 1차 조회가 MIT로 오답하여 LICENSE.md 원문 재확인으로 정정)
+- 구조적 결론 도출: 공식 RSS는 점수가 없어 스냅샷·성장 기준점이 필요 없고 피드 자체가 이력을 보관하므로 **미러에서 제외해도 기능 손실 0** → 약관 회색지대 전면 회피
+- 미러 구성안 확정(후보): HN·DEV·GitHub 스냅샷(숫자) 중심 포함(DEV 메타데이터 확인 필요), arXiv·HF 필요 시, 공식 RSS·Reddit 제외
+- Reddit 표기 문안 확정: "정책상 미러 제외, 로컬 수집만 — 꺼진 동안 관측 복구 불가(완전성 미보장), 약관 준수를 위한 의도된 제한"
+
+**외부 자료 기록** (확인일 2026-07-12)
+
+| URL                                                                      | 제목                    | 판단 근거                               | 적용 범위                                 |
+| ------------------------------------------------------------------------ | ----------------------- | --------------------------------------- | ----------------------------------------- |
+| https://openai.com/policies/row-terms-of-use/                            | OpenAI Terms of Use     | 콘텐츠 권리 유보, 재게시 명시 허용 없음 | rss:openai 미러 제외 판단                 |
+| https://policies.google.com/terms                                        | Google Terms of Service | 소유자 명시 허용 없는 복사·배포 불가    | rss:deepmind, rss:googleai 미러 제외 판단 |
+| https://huggingface.co/terms-of-service                                  | Hugging Face ToS        | 블로그 일괄 재배포 허용 없음            | rss:hfblog 미러 제외 판단                 |
+| https://cursor.com/terms-of-service                                      | Cursor ToS              | reproduce/harvest/extract 명시 금지     | rss:cursor 미러 제외 판단                 |
+| https://www.figma.com/legal/tos/                                         | Figma ToS               | 명시 부여 외 권리 유보                  | rss:figma 미러 제외 판단                  |
+| https://raw.githubusercontent.com/anthropics/claude-code/main/LICENSE.md | Claude Code LICENSE.md  | © Anthropic PBC. All rights reserved.   | rss:claude-code 미러 제외 판단            |
+
+**변경 파일**
+
+- Worklog.md
+
+**검증**
+
+- Claude Code 라이선스는 1차 검색 결과(MIT 추정)가 원문과 달라 raw LICENSE.md 직접 확인으로 교차 검증
+
+**판단 근거**
+
+- 재배포는 개인 구독과 법적 성격이 다르므로 "관행상 안전" 추정 대신 원문 확인(9절). 미러 필요성은 성장 기준점 유무로 판단 — 점수 없는 채널은 미러 실익이 없음
+
+**결과**
+
+- 완료: 미러 후보의 법적 검토 종료. 결정은 7/26 게이트 수치 확인 후 D-009로 기록 예정
+
+---
+
 ### W-030 · v2 롤아웃 문서 정합화 (D-008)
 
 **요청**
