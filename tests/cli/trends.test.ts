@@ -10,7 +10,8 @@ import { upsertSightings } from '../../src/core/store/sightingStore.js';
 import type { LiveSightingInput } from '../../src/core/types.js';
 
 const cliSrc = fileURLToPath(new URL('../../src/cli/index.ts', import.meta.url));
-const NOW = '2026-07-10T12:00:00.000Z';
+// CLI를 자식 프로세스로 실행해 시계를 주입할 수 없으므로, fixture 시각은 실행 시점 기준 상대값이어야 한다 (T-013)
+const NOW = new Date(Date.now() - 3_600_000).toISOString();
 let home: string;
 
 function item(
