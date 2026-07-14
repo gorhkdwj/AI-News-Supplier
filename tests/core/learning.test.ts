@@ -7,7 +7,8 @@ import { mineLearningCandidates } from '../../src/core/learning/candidates.js';
 import { designLearningSession } from '../../src/core/learning/session.js';
 import type { CollectedItem } from '../../src/core/types.js';
 
-const NOW = new Date('2026-07-09T00:00:00.000Z');
+// searchItems가 실제 시계로 조회 윈도를 계산하므로 fixture 시각은 상대값이어야 한다 (T-013)
+const NOW = new Date(Date.now() - 3_600_000);
 const NOW_ISO = NOW.toISOString();
 
 function item(o: Partial<CollectedItem> & { source: string; url: string; title: string }): CollectedItem {
@@ -84,8 +85,9 @@ describe('mineLearningCandidates', () => {
 });
 
 describe('designLearningSession', () => {
-  it('증거 버킷과 record_learning 안내가 포함된 지시문을 만든다', () => {
-    const db = openDb(':memory:');
+  let db: DB;
+  beforeEach(() => {
+    db = openDb(':memory:');
     upsertItems(
       db,
       [
@@ -94,10 +96,32 @@ describe('designLearningSession', () => {
       ],
       NOW_ISO,
     );
+  });
+
+  it('증거 버킷과 record_learning 안내가 포함된 지시문을 만든다', () => {
     const session = designLearningSession(db, { topic: 'transformer', level: 'beginner', timeBudgetMinutes: 30 });
     expect(session.instructions).toContain('transformer');
     expect(session.instructions).toContain('record_learning');
     expect(session.instructions).toContain('30분');
     expect(session.context.official.length + session.context.papers.length).toBeGreaterThanOrEqual(1);
+    expect(session.search).toEqual({ mode: 'exact', matched: 2 });
+  });
+
+  it('전체 일치 0건이면 단어별(OR) 일치로 완화하고 완화 안내를 붙인다', () => {
+    // 'transformer'와 'quantization'이 한 항목에 같이 없음 → AND 0건, OR로 transformer 자료 매칭
+    const session = designLearningSession(db, { topic: 'transformer quantization' });
+    expect(session.search.mode).toBe('relaxed');
+    expect(session.search.matched).toBeGreaterThanOrEqual(1);
+    expect(session.instructions).toContain('완화 검색');
+    expect(session.context.papers.length + session.context.official.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('완화 후에도 0건이면 mode=none과 영어 키워드 재시도 안내를 반환한다', () => {
+    const session = designLearningSession(db, { topic: '에이전트 평가 방법론' });
+    expect(session.search).toEqual({ mode: 'none', matched: 0 });
+    expect(session.instructions).toContain('검색된 자료가 없습니다');
+    expect(session.instructions).toContain('영어 키워드');
+    expect(session.context.official).toHaveLength(0);
+    expect(session.context.papers).toHaveLength(0);
   });
 });

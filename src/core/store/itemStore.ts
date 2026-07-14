@@ -42,10 +42,10 @@ function rowToItem(row: ItemRow): NewsItem {
 }
 
 /** FTS5 MATCH 안전 쿼리로 변환한다(각 토큰을 따옴표로 감싸 특수문자 문법 오류 회피). */
-function toFtsQuery(query: string): string {
+function toFtsQuery(query: string, operator: 'and' | 'or'): string {
   const tokens = query.match(/[\p{L}\p{N}]+/gu) ?? [];
   if (tokens.length === 0) return '""';
-  return tokens.map((t) => `"${t}"`).join(' ');
+  return tokens.map((t) => `"${t}"`).join(operator === 'or' ? ' OR ' : ' ');
 }
 
 export interface UpsertResult {
@@ -182,6 +182,8 @@ export interface SearchQuery {
   sinceDays: number;
   types?: ItemType[];
   limit: number;
+  /** 'and'(기본): 모든 토큰 일치 / 'or': 토큰 중 하나라도 일치(완화 검색) */
+  operator?: 'and' | 'or';
 }
 
 /** FTS5 전문 검색. bm25 관련도 순으로 반환한다. */
@@ -191,7 +193,7 @@ export function searchItems(db: DB, query: string, opts: SearchQuery): NewsItem[
     'items_fts MATCH ?',
     '(items.published_at >= ? OR items.published_at IS NULL)',
   ];
-  const params: unknown[] = [toFtsQuery(query), sinceIso];
+  const params: unknown[] = [toFtsQuery(query, opts.operator ?? 'and'), sinceIso];
 
   if (opts.types && opts.types.length > 0) {
     conds.push(`items.type IN (${opts.types.map(() => '?').join(',')})`);

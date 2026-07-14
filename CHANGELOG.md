@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Each release is also published as a [GitHub Release](https://github.com/gorhkdwj/AI-News-Supplier/releases) with the same notes.
 
+## [Unreleased]
+
+### Fixed
+
+- **Learning session no longer returns an empty skeleton for natural-language topics** (T-012): evidence search now relaxes from full-match (AND) to per-word match (OR) when nothing matches, and when even that finds nothing the instructions explicitly say so and suggest retrying with 1–2 English keywords. The MCP response gains a `search { mode: exact|relaxed|none, matched }` field, and the tool description now recommends English keyword topics.
+- Time-dependent test fixtures (`tests/cli/trends.test.ts`, `tests/core/learning.test.ts`) used hardcoded dates and were guaranteed to fail once the calendar passed them (T-013); they now use timestamps relative to the run time.
+
 ## [0.2.0] - 2026-07-12
 
 ### Breaking

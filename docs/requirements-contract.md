@@ -288,7 +288,12 @@ ranking {
 - warming/unavailable Story의 trendScore 기여는 0이지만 증거와 sourceSpread에서는 제외하지 않습니다.
 - 기존 novelty와 후보 채택 규칙은 유지합니다.
 
-## 12. 오류·누락·시간 계약
+### 11.1 학습 세션 자료 검색 (T-012)
+
+- `learn session` / `design_learning_session`의 자료 검색은 topic 전체 일치(FTS AND)로 시작하고, 0건이면 단어별 일치(OR)로 1회 완화합니다.
+- 완화 후에도 0건이면 오류가 아닙니다. 다만 조용히 빈 뼈대만 반환하지 않고, 0건 사실과 재시도 안내(topic을 영어 키워드 1~2개로 변경 — 수집 코퍼스가 대부분 영어)를 instructions에 명시합니다.
+- 완화(OR) 결과가 사용된 경우 instructions에 완화 검색임을 표시해 에이전트가 관련 자료만 선별하게 합니다.
+- MCP 응답에는 `search { mode: exact|relaxed|none, matched }` 메타 필드를 추가합니다. 기존 필드(topic, context, instructions)는 변경하지 않습니다.
 
 - 수집 오류는 `CollectorError { source, kind: http|parse|auth|timeout, status? }`로 분류합니다.
 - 5xx·네트워크 GET은 최대 2회 지수 백오프 재시도하고 4xx는 재시도하지 않습니다.

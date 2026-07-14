@@ -221,7 +221,9 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
     'design_learning_session',
     {
       description:
-        '특정 토픽의 맥락 자료를 모으고, 에이전트가 학습 세션을 설계·진행하도록 지시문을 반환합니다.',
+        '특정 토픽의 맥락 자료를 모으고, 에이전트가 학습 세션을 설계·진행하도록 지시문을 반환합니다. ' +
+        '수집 데이터가 대부분 영어이므로 topic은 영어 키워드 1~2개를 권장합니다(예: "agent evaluation"). ' +
+        '전체 일치 자료가 없으면 단어별 일치로 자동 완화하며, 그래도 0건이면 search.mode="none"과 재시도 안내를 반환합니다.',
       inputSchema: {
         topic: z.string().min(1),
         level: levelEnum.optional(),
@@ -238,6 +240,7 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
         topic: session.topic,
         context: bucketsToBrief(session.context),
         instructions: session.instructions,
+        search: { mode: session.search.mode, matched: session.search.matched },
       });
     },
   );

@@ -11,6 +11,38 @@
 
 ---
 
+### W-039 · T-012 수정 — 학습 세션 자료 검색 단계적 완화 + 0건 사유 노출
+
+**요청**
+
+- "학습세션 구성도 수정했나?" → 미수정 상태 확인 후 즉시 수정 진행
+
+**수행 작업**
+
+- 계약 문서 11.1 신설(완화 검색·0건 안내·search 메타 규칙)을 코드보다 먼저 갱신
+- itemStore.searchItems에 `operator: 'and'|'or'` 옵션 추가(FTS OR 완화, bm25 관련도 순 유지)
+- designLearningSession: AND 0건 → OR 완화 → 그래도 0건이면 instructions에 사유+영어 키워드 재시도 안내. 반환값에 `search { mode, matched }` 추가
+- MCP design_learning_session: 도구 설명에 영어 키워드 권장·자동 완화 동작 명시, 응답에 search 메타 추가
+- docs/index.html 도구 설명 갱신, CHANGELOG [Unreleased] 추가
+- tests/core/learning.test.ts: 고정 날짜 fixture를 상대 시각으로 교체(T-013 잠복 시한폭탄 제거) + relaxed/none 케이스 테스트 2건 추가
+
+**변경 파일**
+
+- docs/requirements-contract.md, src/core/store/itemStore.ts, src/core/learning/session.ts, src/mcp/tools.ts, docs/index.html, CHANGELOG.md, tests/core/learning.test.ts, Troubleshootinglog.md(T-012 최종 해결), Worklog.md(본 기록)
+
+**검증**
+
+- typecheck·lint·테스트 33파일/236건(+2) 전부 통과(각 EXIT=0)
+- E2E: "에이전트 평가" → relaxed 1건(이전엔 빈 뼈대) / 무의미 토픽 → none+재시도 안내 / "ai agent evaluation benchmark" → exact 14건
+
+**판단 근거**
+
+- search_news의 AND 의미는 사용자 기대이므로 완화를 기본화하지 않고 호출자(학습 세션)가 operator로 선택하게 설계. MCP 응답 필드는 추가만 하여 하위 호환 유지
+
+**결과**
+
+- 완료: T-012 종결. 0.3.0 publish 시 CHANGELOG [Unreleased]로 반영 예정
+
 ### W-038 · CI 실패 진단·수정 — trends CLI 테스트 시간 의존 fixture (T-013)
 
 **요청**
