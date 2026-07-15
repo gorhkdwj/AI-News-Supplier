@@ -600,6 +600,24 @@ export function getSightingsByStory(db: DB, storyId: string): SourceSighting[] {
   return rows.map((row) => rowToSighting(row, getMetricHistory(db, row.id)));
 }
 
+/** Story별 대표 토론 URL을 반환한다(primary 우선, 다음 점수 높은 순). 토론 URL이 없는 Story는 생략한다. */
+export function getDiscussionUrls(db: DB, storyIds: readonly string[]): Map<string, string> {
+  const urls = new Map<string, string>();
+  if (storyIds.length === 0) return urls;
+  const placeholders = storyIds.map(() => '?').join(',');
+  const rows = db
+    .prepare(
+      `SELECT story_id, discussion_url FROM source_sightings
+       WHERE story_id IN (${placeholders}) AND discussion_url IS NOT NULL
+       ORDER BY is_primary DESC, COALESCE(score, -1) DESC, id ASC`,
+    )
+    .all(...storyIds) as { story_id: string; discussion_url: string }[];
+  for (const row of rows) {
+    if (!urls.has(row.story_id)) urls.set(row.story_id, row.discussion_url);
+  }
+  return urls;
+}
+
 /** 안정적인 원천 identity로 Sighting 하나를 조회한다. */
 export function getSightingBySourceKey(
   db: DB,

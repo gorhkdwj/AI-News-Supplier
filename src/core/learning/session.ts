@@ -2,6 +2,7 @@ import type { DB } from '../db/connection.js';
 import type { NewsItem } from '../types.js';
 import { searchItems } from '../store/itemStore.js';
 import type { LearningLevel } from '../store/learningStore.js';
+import { getDiscussionUrls } from '../store/sightingStore.js';
 import { bucketEvidence, type EvidenceBuckets } from './candidates.js';
 
 /** exact: 전체 일치 / relaxed: 단어별(OR) 완화 일치 / none: 완화 후에도 0건 */
@@ -32,9 +33,20 @@ const LEVEL_GUIDE: Record<LearningLevel, string> = {
   advanced: '심화 트레이드오프, 한계, 최신 연구 맥락까지 깊이 다루십시오.',
 };
 
-function linkList(items: NewsItem[]): string {
+/** 링크를 열기 전에 우회 경로(토론)와 자료 두께(점수·댓글)를 가늠할 수 있게 병기한다 (계약 11.2). */
+function itemMeta(item: NewsItem, discussionUrl: string | undefined): string {
+  const parts: string[] = [];
+  if (discussionUrl !== undefined && discussionUrl !== item.url) parts.push(`토론: ${discussionUrl}`);
+  if (item.score !== null) parts.push(`점수 ${item.score}`);
+  if (item.commentsCount !== null) parts.push(`댓글 ${item.commentsCount}`);
+  return parts.length === 0 ? '' : `\n    (${parts.join(' · ')})`;
+}
+
+function linkList(items: NewsItem[], discussions: Map<string, string>): string {
   if (items.length === 0) return '  (없음)';
-  return items.map((i) => `  - ${i.title} — ${i.url}`).join('\n');
+  return items
+    .map((i) => `  - ${i.title} — ${i.url}${itemMeta(i, discussions.get(i.id))}`)
+    .join('\n');
 }
 
 function searchNotice(topic: string, search: SessionSearchInfo, sinceDays: number): string[] {
@@ -62,7 +74,13 @@ function renderInstructions(
   ctx: EvidenceBuckets,
   search: SessionSearchInfo,
   sinceDays: number,
+  discussions: Map<string, string>,
 ): string {
+  // 패키지에 없는 자료를 지시하지 않는다(계약 11.2): 핫레포/모델이 없으면 실습 지시문을 대체한다.
+  const practiceStep =
+    ctx.repos.length > 0
+      ? '3) 실습: 핫레포/모델 중 하나를 골라 따라 할 수 있는 실습 단계 제시'
+      : '3) 실습: 핫레포/모델 자료가 없으므로, 근거 자료(논문·공식 글·토론)의 방법을 소규모로 재현하는 실습 단계 제시';
   return [
     `당신은 학습자가 "${topic}"을(를) 배우도록 돕는 튜터입니다. ${LEVEL_GUIDE[level]}`,
     `총 학습 시간은 약 ${timeBudget}분입니다. 아래 근거 자료만 사용하고, 각 주장에는 출처 URL을 붙이십시오.`,
@@ -70,21 +88,25 @@ function renderInstructions(
     '다음 순서로 학습 세션을 구성해 진행하십시오:',
     `1) 5분 브리핑: "${topic}"이 무엇이고 지금 왜 화제인지 요약`,
     '2) 핵심 개념: 학습자 수준에 맞춰 개념 3~5개를 설명(공식 자료·논문 근거 활용)',
-    '3) 실습: 핫레포/모델 중 하나를 골라 따라 할 수 있는 실습 단계 제시',
+    practiceStep,
     '4) 이해 점검: 학습자에게 던질 확인 질문 3개',
     '5) 더 읽을거리: 아래 자료에서 우선순위가 높은 항목 추천',
     '6) 마무리: 학습이 끝나면 record_learning 도구로 이 토픽을 기록하도록 안내',
     '',
+    '자료 접근이 막히거나 근거가 부족할 때의 규칙:',
+    '- 원문 접근이 차단되면(예: 403) 병기된 토론 URL로 우회하되, 토론 경유 내용은 2차 자료로 표시하고 해당 부분을 미검증 범위로 명시하십시오.',
+    '- 근거가 부족하면 순서대로 대응하십시오: 1) 세션 범위 축소(사유 명시) 2) search_news로 보강 검색 또는 인접 토픽으로 이 도구 재호출 3) 수집이 쌓인 뒤 재시도 제안 4) 그래도 부족하면 세션을 만들지 말고 근거 부족을 보고. 근거 없는 내용을 지어내지 마십시오.',
+    '',
     '=== 근거 자료 ===',
     ...searchNotice(topic, search, sinceDays),
     '[공식 업데이트]',
-    linkList(ctx.official),
+    linkList(ctx.official, discussions),
     '[논문]',
-    linkList(ctx.papers),
+    linkList(ctx.papers, discussions),
     '[핫레포/모델]',
-    linkList(ctx.repos),
+    linkList(ctx.repos, discussions),
     '[커뮤니티/기타]',
-    linkList(ctx.discussion),
+    linkList(ctx.discussion, discussions),
   ].join('\n');
 }
 
@@ -105,10 +127,22 @@ export function designLearningSession(db: DB, opts: SessionOptions): LearningSes
   }
   const search: SessionSearchInfo = { mode, matched: items.length };
   const context = bucketEvidence(items);
+  const discussions = getDiscussionUrls(
+    db,
+    items.map((i) => i.id),
+  );
   return {
     topic: opts.topic,
     context,
-    instructions: renderInstructions(opts.topic, level, timeBudget, context, search, sinceDays),
+    instructions: renderInstructions(
+      opts.topic,
+      level,
+      timeBudget,
+      context,
+      search,
+      sinceDays,
+      discussions,
+    ),
     search,
   };
 }

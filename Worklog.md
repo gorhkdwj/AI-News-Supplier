@@ -11,6 +11,37 @@
 
 ---
 
+### W-044 · B-001·B-002 구현 — 세션 근거 신뢰 신호 병기 + 지시문 대응 규칙 + 실습 조건부
+
+**요청**
+
+- "이대로 보강해서 B-001, B-002 진행해줘" (직전 논의로 B-001 범위가 URL 병기에서 4종 보강으로 확장)
+
+**수행 작업**
+
+- 계약 11.2 신설(코드보다 먼저): 근거 자료 병기 규칙(대표 토론 URL·점수·댓글), 2차 자료 표시, 근거 부족 4단 대응, 실습 지시문 조건부
+- sightingStore에 `getDiscussionUrls(db, storyIds)` 대량 조회 헬퍼 추가(primary 우선 → 점수 높은 순, IN 쿼리 1회)
+- session.ts: 근거 목록에 `(토론: URL · 점수 N · 댓글 N)` 병기, 지시문에 "자료 접근이 막히거나 근거가 부족할 때의 규칙" 블록 추가, repos 버킷이 비면 실습 단계를 근거 재현형으로 대체
+- 테스트 4건 추가(병기·규칙 존재·실습 대체·실습 유지), fixture 헬퍼에 commentsCount/raw 전달 확장
+
+**변경 파일**
+
+- docs/requirements-contract.md(11.2), src/core/store/sightingStore.ts, src/core/learning/session.ts, tests/core/learning.test.ts, CHANGELOG.md, docs/plans/backlog.md(B-001·B-002 완료), Worklog.md(본 기록)
+
+**검증**
+
+- typecheck·lint EXIT=0, 테스트 33파일 240건(+4) 전부 통과
+- 실 DB E2E: `learn session "llm juries"`로 토론 URL·점수·댓글 병기와 조건부 실습 문구 확인 (아래 결과 참조)
+
+**판단 근거**
+
+- 토론 URL을 items 컬럼으로 승격하지 않고 Sighting 조회로 합류: 같은 Story가 복수 소스에서 관측될 수 있어 토론 URL은 관측의 속성. 대표 선택 규칙(primary→고점수)을 계약에 명문화
+- 지시문 규칙은 텍스트지만 테스트로 존재를 검증: LLM 무호출 도구에서 지시문은 API 응답의 일부
+
+**결과**
+
+- 완료: B-001·B-002 종결. CHANGELOG [Unreleased]에 반영, 0.3.0 publish 시 릴리스 노트로 전환
+
 ### W-043 · 백로그 문서 신설 — 피드백 ①~⑥ 태스크 등록 + 잔여 태스크 전수 정리
 
 **요청**

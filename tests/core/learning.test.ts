@@ -20,10 +20,10 @@ function item(o: Partial<CollectedItem> & { source: string; url: string; title: 
     summary: o.summary ?? null,
     author: null,
     score: o.score ?? null,
-    commentsCount: null,
+    commentsCount: o.commentsCount ?? null,
     tags: o.tags ?? [],
     publishedAt: NOW_ISO,
-    raw: {},
+    raw: o.raw ?? {},
   };
 }
 
@@ -123,5 +123,60 @@ describe('designLearningSession', () => {
     expect(session.instructions).toContain('영어 키워드');
     expect(session.context.official).toHaveLength(0);
     expect(session.context.papers).toHaveLength(0);
+  });
+
+  it('근거 자료에 토론 URL·점수·댓글 수를 병기한다 (계약 11.2, B-001)', () => {
+    // HN 항목은 raw.objectID로 Sighting에 discussion_url이 채워진다
+    upsertItems(
+      db,
+      [
+        item({
+          source: 'hackernews',
+          url: 'https://e.com/t3',
+          title: 'Transformer inference tricks',
+          score: 120,
+          commentsCount: 34,
+          raw: { objectID: '999' },
+        }),
+      ],
+      NOW_ISO,
+    );
+    const session = designLearningSession(db, { topic: 'transformer' });
+    expect(session.instructions).toContain('토론: https://news.ycombinator.com/item?id=999');
+    expect(session.instructions).toContain('점수 120');
+    expect(session.instructions).toContain('댓글 34');
+  });
+
+  it('원문 차단·근거 부족 대응 규칙을 지시문에 항상 포함한다 (계약 11.2, B-001)', () => {
+    const session = designLearningSession(db, { topic: 'transformer' });
+    expect(session.instructions).toContain('2차 자료');
+    expect(session.instructions).toContain('지어내지 마십시오');
+  });
+
+  it('핫레포/모델 버킷이 비면 실습 지시문을 근거 재현형으로 대체한다 (계약 11.2, B-002)', () => {
+    const session = designLearningSession(db, { topic: 'transformer' });
+    expect(session.context.repos).toHaveLength(0);
+    expect(session.instructions).toContain('핫레포/모델 자료가 없으므로');
+    expect(session.instructions).not.toContain('핫레포/모델 중 하나를 골라');
+  });
+
+  it('핫레포/모델 버킷이 있으면 기존 실습 지시문을 유지한다 (계약 11.2, B-002)', () => {
+    upsertItems(
+      db,
+      [
+        item({
+          source: 'github',
+          url: 'https://e.com/t4',
+          title: 'transformer-toolkit: fast attention kernels',
+          type: 'hot_repo',
+          score: 300,
+        }),
+      ],
+      NOW_ISO,
+    );
+    const session = designLearningSession(db, { topic: 'transformer' });
+    expect(session.context.repos.length).toBeGreaterThanOrEqual(1);
+    expect(session.instructions).toContain('핫레포/모델 중 하나를 골라');
+    expect(session.instructions).not.toContain('핫레포/모델 자료가 없으므로');
   });
 });

@@ -7,7 +7,14 @@ Each release is also published as a [GitHub Release](https://github.com/gorhkdwj
 
 ## [Unreleased]
 
+### Added
+
+- **Learning session evidence now carries triage signals**: each source line includes the representative discussion URL (when one exists), score, and comment count, so a consuming agent can route around blocked originals (e.g. HTTP 403) and gauge how much material sits behind a link before fetching it.
+- **Session instructions now include fallback rules**: content obtained via a discussion page must be marked as second-hand, and when evidence is too thin the agent is told to shrink the session, search for more material, suggest retrying later, or stop and report — never fabricate.
+
 ### Fixed
+
+- The practice step no longer tells the agent to "pick a hot repo/model" when the repos bucket is empty; it switches to reproducing the method from the available evidence instead.
 
 - **Learning session no longer returns an empty skeleton for natural-language topics** (T-012): evidence search now relaxes from full-match (AND) to per-word match (OR) when nothing matches, and when even that finds nothing the instructions explicitly say so and suggest retrying with 1–2 English keywords. The MCP response gains a `search { mode: exact|relaxed|none, matched }` field, and the tool description now recommends English keyword topics.
 - Time-dependent test fixtures (`tests/cli/trends.test.ts`, `tests/core/learning.test.ts`) used hardcoded dates and were guaranteed to fail once the calendar passed them (T-013); they now use timestamps relative to the run time.
