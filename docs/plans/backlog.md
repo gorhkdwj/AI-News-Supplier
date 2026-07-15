@@ -20,7 +20,7 @@
 
 | ID | 태스크 | 출처 | 내용 · 선행 조건 | 상태 |
 |---|---|---|---|---|
-| B-006 | v2 Overview 기본 전환 | 계약 13절, D-008/D-010 | 0.3.0의 정의. **선행**: 승인 게이트 통과(~7/26 평가). 미달 시 원인 수정 후 재평가 | 게이트 대기 |
+| B-006 | v2 Overview 기본 전환 | 계약 13절, D-008/D-010 | 0.3.0의 정의. **선행**: 승인 게이트 통과. 7/15 사전 실측(`tools/gate-eval.mjs`, W-047): 24h coverage 99.4% 통과 · community 가용성 100% 통과 · 소스 연속실패 0 통과 / 7d coverage 평가 불가(7/17부터 분모 생성) · trending top20 검수·precision@20 평가 불가(trending 공백) / 단일 소스 비중 HN 90%(Reddit 비활성으로 조건부). **7/19 재실측 후 통과 시 조기 전환 검토** | 게이트 대기 |
 | B-003 | v2 repos·trending 0건 사유 노출 | 피드백 ① (W-040) | 계약 10.4 신설. `TrendSection`에 additive `notice`(no_candidates/warming/filtered 진단) → CLI `(사유: …)` → MCP `notice` 필드 | 완료(W-046) |
 
 ### P2 — 신규 사용자 경험 (0.3.0 강력 권장)
