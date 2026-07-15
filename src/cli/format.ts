@@ -38,6 +38,7 @@ export function formatTrends(result: TrendResult): string {
     lines.push(`${SECTION_LABELS[section.channel]} · ${section.sort}`);
     if (section.items.length === 0) {
       lines.push('  표시할 항목이 없습니다.');
+      if (section.notice !== undefined) lines.push(`  (사유: ${section.notice})`);
       continue;
     }
     section.items.forEach((it) => {

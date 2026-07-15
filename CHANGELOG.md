@@ -15,6 +15,7 @@ Each release is also published as a [GitHub Release](https://github.com/gorhkdwj
 ### Fixed
 
 - The practice step no longer tells the agent to "pick a hot repo/model" when the repos bucket is empty; it switches to reproducing the method from the available evidence instead.
+- **Empty v2 repos·trending results now explain themselves**: when no repository qualifies, the section carries a `notice` telling you whether nothing was collected yet, growth baselines are still warming up (the first ~7 days after install), or candidates simply failed the eligibility bar. The CLI prints it as `(사유: …)` and the MCP response adds a `notice` field to `sections[]` (additive, backward-compatible).
 
 - **Learning session no longer returns an empty skeleton for natural-language topics** (T-012): evidence search now relaxes from full-match (AND) to per-word match (OR) when nothing matches, and when even that finds nothing the instructions explicitly say so and suggest retrying with 1–2 English keywords. The MCP response gains a `search { mode: exact|relaxed|none, matched }` field, and the tool description now recommends English keyword topics.
 - Time-dependent test fixtures (`tests/cli/trends.test.ts`, `tests/core/learning.test.ts`) used hardcoded dates and were guaranteed to fail once the calendar passed them (T-013); they now use timestamps relative to the run time.

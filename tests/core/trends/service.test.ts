@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { openDb, type DB } from '../../../src/core/db/connection.js';
 import { itemId } from '../../../src/core/normalize.js';
 import { getTrendItemDetail, getTrends } from '../../../src/core/trends/service.js';
+import { serializeTrendResult } from '../../../src/core/trends/serialize.js';
 import { upsertItems } from '../../../src/core/store/itemStore.js';
 import { upsertSightings } from '../../../src/core/store/sightingStore.js';
 import type { LiveSightingInput } from '../../../src/core/types.js';
@@ -316,6 +317,65 @@ describe('core trend service', () => {
     ]);
     expect(result.items.every((item) => item.ranking.kind === 'legacy_hotness_v1')).toBe(true);
     expect(result.items.every((item) => item.hotness === item.ranking.score)).toBe(true);
+  });
+
+  it('첫 관측만 있으면 trending 0건에 워밍업 사유 notice를 붙인다 (계약 10.4, B-003)', () => {
+    const connection = db();
+    // 스냅샷이 1회뿐이라 24h·7d 기준점이 없다 → 자격은 통과하나 warming
+    upsertSightings(
+      connection,
+      [
+        live({
+          source: 'github',
+          sourceKey: 'warm-repo',
+          type: 'hot_repo',
+          title: 'acme/warm-repo',
+          url: 'https://github.com/acme/warm-repo',
+          scoreKind: 'stars',
+          score: 5_000,
+          commentsCount: null,
+          publishedAt: '2026-01-01T00:00:00.000Z',
+          activityAt: NOW.toISOString(),
+        }),
+      ],
+      NOW.toISOString(),
+    );
+
+    const result = getTrends(
+      connection,
+      { rankingVersion: 'v2', channel: 'repos', sort: 'trending', limit: 10 },
+      { now: NOW },
+    );
+
+    expect(result.items).toHaveLength(0);
+    expect(result.sections[0]!.notice).toContain('워밍업');
+  });
+
+  it('관측 자체가 없으면 수집 안내 notice, overview에서도 repos 섹션에만 붙는다 (계약 10.4, B-003)', () => {
+    const connection = db();
+
+    const trending = getTrends(
+      connection,
+      { rankingVersion: 'v2', channel: 'repos', sort: 'trending', limit: 10 },
+      { now: NOW },
+    );
+    expect(trending.sections[0]!.notice).toContain('수집');
+
+    const overview = getTrends(
+      connection,
+      { rankingVersion: 'v2', channel: 'overview', limit: 12 },
+      { now: NOW },
+    );
+    const repoSection = overview.sections.find((section) => section.channel === 'repos')!;
+    const communitySection = overview.sections.find((section) => section.channel === 'community')!;
+    expect(repoSection.notice).toContain('수집');
+    expect(communitySection.items).toHaveLength(0);
+    expect(communitySection.notice).toBeUndefined();
+
+    const serialized = serializeTrendResult(trending) as {
+      sections: Array<{ channel: string; notice?: string }>;
+    };
+    expect(serialized.sections[0]!.notice).toContain('수집');
   });
 
   it('preserves the legacy latest-500 candidate cap and equal-time input order', () => {

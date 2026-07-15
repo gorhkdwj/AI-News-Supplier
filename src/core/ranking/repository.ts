@@ -51,17 +51,40 @@ function isNew(candidate: RepositoryCandidate, now: Date): boolean {
   return ageHours(candidate.createdAt, now) <= 14 * 24;
 }
 
+/** Trending 자격 조건(계약 6.1) 중 기준점을 제외한 부분. 자격 필터와 0건 진단이 공유한다. */
+function passesTrendingFilters(candidate: RepositoryCandidate, now: Date): boolean {
+  return (
+    candidate.quality === 'live' &&
+    structurallyEligible(candidate) &&
+    !isNew(candidate, now) &&
+    candidate.totalStars >= 100 &&
+    ageHours(candidate.activityAt, now) <= 14 * 24
+  );
+}
+
+export type RepositoryTrendingEmptyReason = 'no_candidates' | 'warming' | 'filtered';
+
+/** Trending 0건의 사유를 진단한다(계약 10.4, B-003): 관측 없음 / 기준점 워밍업 / 자격 미충족. */
+export function repositoryTrendingEmptyReason(
+  candidates: readonly RepositoryCandidate[],
+  options: RankOptions,
+): RepositoryTrendingEmptyReason {
+  if (candidates.length === 0) return 'no_candidates';
+  const baselineBlocked = candidates.some(
+    (candidate) =>
+      passesTrendingFilters(candidate, options.now) &&
+      (candidate.baseline24 === null || candidate.baseline7 === null),
+  );
+  return baselineBlocked ? 'warming' : 'filtered';
+}
+
 export function rankRepositoryTrending(
   candidates: readonly RepositoryCandidate[],
   options: RankOptions,
 ): Array<RankedTrend<RepositoryCandidate>> {
   const eligible = candidates.filter(
     (candidate) =>
-      candidate.quality === 'live' &&
-      structurallyEligible(candidate) &&
-      !isNew(candidate, options.now) &&
-      candidate.totalStars >= 100 &&
-      ageHours(candidate.activityAt, options.now) <= 14 * 24 &&
+      passesTrendingFilters(candidate, options.now) &&
       candidate.baseline24 !== null &&
       candidate.baseline7 !== null,
   );

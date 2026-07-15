@@ -33,6 +33,7 @@ export function serializeTrendResult(result: TrendResult): Record<string, unknow
     channel: section.channel,
     sort: section.sort,
     items: section.items.map(serializeTrendItem),
+    ...(section.notice === undefined ? {} : { notice: section.notice }),
   }));
   return {
     ranking_version: result.rankingVersion,

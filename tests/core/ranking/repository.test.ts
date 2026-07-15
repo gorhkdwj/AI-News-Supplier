@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   rankRepositoryDiscovery,
   rankRepositoryTrending,
+  repositoryTrendingEmptyReason,
   type RepositoryCandidate,
 } from '../../../src/core/ranking/index.js';
 
@@ -160,5 +161,24 @@ describe('repository trending', () => {
       now: NOW,
     });
     expect(tied.map((item) => item.storyId)).toEqual(['a', 'b']);
+  });
+});
+
+describe('repositoryTrendingEmptyReason (계약 10.4, B-003)', () => {
+  it('관측이 하나도 없으면 no_candidates', () => {
+    expect(repositoryTrendingEmptyReason([], { now: NOW })).toBe('no_candidates');
+  });
+
+  it('기준점만 없는 자격 후보가 있으면 warming', () => {
+    const warmingOnly = repo({ storyId: 'warm', baseline24: null, baseline7: null });
+    expect(repositoryTrendingEmptyReason([warmingOnly], { now: NOW })).toBe('warming');
+  });
+
+  it('자격 조건 미충족 후보만 있으면 filtered', () => {
+    const filteredOut = [
+      repo({ storyId: 'few-stars', totalStars: 99, baseline24: null, baseline7: null }),
+      repo({ storyId: 'fork', fork: true }),
+    ];
+    expect(repositoryTrendingEmptyReason(filteredOut, { now: NOW })).toBe('filtered');
   });
 });

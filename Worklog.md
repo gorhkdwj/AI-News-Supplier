@@ -11,6 +11,39 @@
 
 ---
 
+### W-046 · B-003 구현 — v2 repos·trending 0건 사유 노출 (+B-010 후순위 이동)
+
+**요청**
+
+- "publish는 다른 태스크와 묶어서 할 수 있으니 후순위로 미뤄줘. 일단 B-003 바로 진행해줘"
+
+**수행 작업**
+
+- backlog.md: B-010을 P1→P3으로 이동(사유 명기)
+- 계약 10.4 신설(코드보다 먼저): 빈 섹션 사유 규칙 — additive `notice`, repos·trending 3분류(no_candidates/warming/filtered)
+- ranking/repository.ts: 자격 필터를 `passesTrendingFilters`로 추출(필터와 진단이 판정 공유), `repositoryTrendingEmptyReason` 진단 함수 신설
+- trends/service.ts: `TrendSection.notice` 필드 추가, 단일 채널·overview 두 경로에서 repos·trending 0건 시 사유 주입
+- CLI format.ts `(사유: …)` 출력, serialize.ts MCP `notice` 직렬화(값 있을 때만)
+- 테스트 5건 추가: 진단 함수 단위 3건(no_candidates/warming/filtered) + 서비스 통합 2건(워밍업 notice, 빈 DB·overview·직렬화)
+
+**변경 파일**
+
+- docs/requirements-contract.md(10.4), src/core/ranking/repository.ts, src/core/trends/service.ts, src/core/trends/serialize.ts, src/cli/format.ts, tests/core/ranking/repository.test.ts, tests/core/trends/service.test.ts, CHANGELOG.md, docs/plans/backlog.md, Worklog.md(본 기록)
+
+**검증**
+
+- typecheck·lint EXIT=0, 테스트 33파일 245건(+5) 전부 통과
+- 실 DB E2E: `trends --ranking v2 --channel repos --sort trending` → "표시할 항목이 없습니다. (사유: 성장 비교 기준점(24시간·7일 전 스냅샷)이 아직 부족합니다(워밍업)…)" — W-040에서 이유 없이 비었던 화면이 실제로 설명됨(수집 4일째, 7일 기준점 미확보 상태와 일치)
+
+**판단 근거**
+
+- 진단을 랭커 모듈에 둔 이유: 자격 판정 로직과 같은 파일에서 술어를 공유해야 필터 조건이 바뀔 때 진단이 어긋나지 않음. notice 문구는 core(service)에서 생성해 CLI·MCP가 같은 문구를 받음
+- notice는 값이 있을 때만 직렬화(additive)해 기존 MCP 소비자와 하위 호환 유지
+
+**결과**
+
+- 완료: B-003 종결. P1 잔여는 B-006(게이트 대기)뿐, 다음 착수 후보는 B-009
+
 ### W-045 · 백로그 0.3.0 범위 우선순위 정리 (P1~P3 + 달력 순서)
 
 **요청**

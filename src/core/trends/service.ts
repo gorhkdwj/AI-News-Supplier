@@ -10,6 +10,7 @@ import {
   rankRepositoryTrending,
   rankResearchHot,
   rankResearchLatest,
+  repositoryTrendingEmptyReason,
   type CommunityBenchmarkSamples,
   type CommunityCandidate,
   type OfficialCandidate,
@@ -73,6 +74,8 @@ export interface TrendSection {
   channel: TrendChannel;
   sort: TrendSort;
   items: TrendResultItem[];
+  /** 섹션이 0건이고 사유를 진단할 수 있을 때만 채우는 additive 필드 (계약 10.4, B-003). */
+  notice?: string;
 }
 
 export interface TrendResult {
@@ -445,6 +448,32 @@ function rankChannel(
   }
 }
 
+const REPOSITORY_TRENDING_NOTICES: Record<
+  ReturnType<typeof repositoryTrendingEmptyReason>,
+  string
+> = {
+  no_candidates: '조회 기간 안에 수집된 레포 관측이 없습니다. 수집(fetch)을 실행한 뒤 다시 조회하십시오.',
+  warming:
+    '성장 비교 기준점(24시간·7일 전 스냅샷)이 아직 부족합니다(워밍업). 수집이 1~7일 쌓이면 표시됩니다.',
+  filtered: '자격 기준(별 100개 이상, 최근 14일 push, AI 관련성 등)을 충족하는 레포가 없습니다.',
+};
+
+function repositoryTrendingNotice(context: RankingContext): string {
+  const reason = repositoryTrendingEmptyReason(repositoryCandidates(context, 'trending'), {
+    now: context.now,
+  });
+  return REPOSITORY_TRENDING_NOTICES[reason];
+}
+
+/** 0건 섹션에 진단 가능한 사유를 붙인다. 현재는 v2 Repos/trending만 진단한다 (계약 10.4). */
+function withSectionNotice(section: TrendSection, context: RankingContext): TrendSection {
+  if (section.items.length > 0) return section;
+  if (section.channel === 'repos' && section.sort === 'trending') {
+    return { ...section, notice: repositoryTrendingNotice(context) };
+  }
+  return section;
+}
+
 function rankedToResultItem(candidate: RankedTrend, context: RankingContext): TrendResultItem {
   const row =
     candidate.sightingId === undefined
@@ -561,7 +590,9 @@ export function getTrends(
     const items = ranked.map((candidate) => rankedToResultItem(candidate, context));
     return {
       rankingVersion: 'v2',
-      sections: [{ channel: request.channel, sort: request.sort, items }],
+      sections: [
+        withSectionNotice({ channel: request.channel, sort: request.sort, items }, context),
+      ],
       items,
     };
   }
@@ -581,11 +612,16 @@ export function getTrends(
     community: 'hot',
     research: 'hot',
   };
-  const sections: TrendSection[] = overview.sections.map((section) => ({
-    channel: section.channel,
-    sort: sectionSorts[section.channel],
-    items: section.items.map((candidate) => rankedToResultItem(candidate, context)),
-  }));
+  const sections: TrendSection[] = overview.sections.map((section) =>
+    withSectionNotice(
+      {
+        channel: section.channel,
+        sort: sectionSorts[section.channel],
+        items: section.items.map((candidate) => rankedToResultItem(candidate, context)),
+      },
+      context,
+    ),
+  );
   return { rankingVersion: 'v2', sections, items: sections.flatMap((section) => section.items) };
 }
 
