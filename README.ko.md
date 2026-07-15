@@ -35,6 +35,14 @@ ains fetch
 ains trends --limit 12
 ```
 
+새로 설치한 직후에는 성장 랭킹(v2 repos trending)이 로컬 스냅샷을 최대 7일 모아야 작동합니다. 공개 스냅샷 미러(Hacker News / DEV.to / GitHub의 메타데이터·수치 스냅샷만 포함)에서 이력을 받아오면 이 대기를 대부분 건너뛸 수 있습니다.
+
+```bash
+ains fetch --seed
+```
+
+미러 워크플로를 fork에서 직접 운영한다면 `~/.ai-news-supplier/config.json`의 `mirror.repo`, `mirror.tag`로 미러 주소를 바꿀 수 있습니다.
+
 유형별 랭킹 v2를 명시적으로 사용하려면 다음과 같이 실행합니다.
 
 ```bash

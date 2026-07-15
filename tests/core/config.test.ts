@@ -27,6 +27,18 @@ describe('Reddit config', () => {
     expect(loadConfig().tokens.reddit.username).toBe('env-fixture-user');
   });
 
+  it('UTF-8 BOM이 붙은 config.json도 정상 파싱한다 (Windows 메모장·PowerShell 저장 대응)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ains-config-'));
+    tempDirs.push(dir);
+    writeFileSync(
+      join(dir, 'config.json'),
+      '\uFEFF' + JSON.stringify({ mirror: { repo: 'acme/fork' } }),
+    );
+    vi.stubEnv('AINS_HOME', dir);
+
+    expect(loadConfig().mirror.repo).toBe('acme/fork');
+  });
+
   it('손상된 config 원문을 파싱 실패 로그에 노출하지 않는다', () => {
     const dir = mkdtempSync(join(tmpdir(), 'ains-config-'));
     tempDirs.push(dir);

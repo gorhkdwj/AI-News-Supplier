@@ -363,12 +363,15 @@ AI NEWS HUB와 정확한 순위 일치는 승인 기준이 아닙니다.
 - 게시 파이프라인의 상태 DB(`mirror-state.db`)는 같은 release에 보관해 실행 간 연속성을 유지하며, 포함 소스(14.1절) 외의 데이터를 담지 않는다.
 - 미러 수집·게시 실패는 다음 주기에 재시도하며 클라이언트 동작에 영향을 주지 않는다.
 
-### 14.3 클라이언트 병합 (M3, v2 기본 전환과 함께 구현)
+### 14.3 클라이언트 병합 (`ains fetch --seed`, B-007에서 확정)
 
-- 병합은 기존 유일 키를 그대로 사용해 멱등이어야 한다: Story `sha256(canonical_url)`, Sighting `(source, source_key)`, Snapshot `(sighting_id, bucket_at)` — 같은 버킷 충돌은 최신 `observed_at` 우선(2.3절 규칙).
-- 다운로드 파일은 병합 전 sha256을 검증하고, 실패 시 해당 파일을 폐기한다.
-- 시딩은 옵트인이다. 미러 유래 데이터의 `quality` 표기 등 세부는 M3 설계 시 이 절에 확정한다.
-- 미러 주소(저장소/릴리스 태그)는 설정으로 변경할 수 있어야 한다. 기본값은 본 저장소의 `mirror-data`이며, 사용자는 fork에서 같은 워크플로를 돌려 자기만의 미러를 운영하고 그 주소를 지정할 수 있다(탈중앙 대비).
+- 시딩은 옵트인이다: `ains fetch --seed`가 미러 manifest와 자산을 내려받아 병합한 뒤 일반 수집을 이어서 수행한다.
+- 병합은 기존 유일 키를 그대로 사용해 멱등이어야 한다: Story `sha256(canonical_url)`, Sighting `sha256(source, source_key)`, Snapshot `(sighting_id, bucket_at)` — ID가 결정적이므로 미러와 로컬이 같은 관측에 같은 ID를 만든다.
+- 충돌 규칙(로컬 우선): Story·Sighting이 로컬에 이미 있으면 내용 필드는 로컬을 유지하고 관측 시각 범위만 넓힌다(`first_seen_at`은 이른 쪽, `last_seen_at`은 늦은 쪽). Snapshot 충돌은 최신 `observed_at` 우선(2.3절 규칙).
+- `quality`는 게시된 값을 그대로 병합한다. 중앙 파이프라인도 동일 수집기의 라이브 관측이며, 별도 표기를 하면 랭킹 자격(quality=live)에서 제외되어 시딩 목적(성장 기준점 공급)이 무산되기 때문이다. `raw`는 미러에 없으므로 null로 저장한다.
+- 병합 후 영향받은 Story의 primary Sighting을 재계산한다.
+- 다운로드 파일은 병합 전 manifest의 sha256과 대조하고, 검증 실패·손상 파일은 그 파일만 폐기하고 나머지를 계속 처리한다. 시딩 전체의 실패(미러 접속 불가 등)는 일반 수집을 깨지 않는다(1절 격리 원칙).
+- 미러 주소는 설정 `mirror.repo`(기본 `gorhkdwj/AI-News-Supplier`)와 `mirror.tag`(기본 `mirror-data`)로 변경할 수 있다. 사용자는 fork에서 같은 워크플로를 돌려 자기만의 미러를 운영하고 그 주소를 지정할 수 있다(탈중앙 대비).
 
 ## 15. 외부 자료 기록
 

@@ -35,6 +35,14 @@ ains fetch
 ains trends --limit 12
 ```
 
+On a fresh install, growth rankings (v2 repos trending) need up to 7 days of local snapshots to warm up. You can skip most of that wait by seeding from the public snapshot mirror (Hacker News / DEV.to / GitHub metadata and numeric snapshots only):
+
+```bash
+ains fetch --seed
+```
+
+The mirror address can be changed in `~/.ai-news-supplier/config.json` (`mirror.repo`, `mirror.tag`) if you run your own fork of the mirror workflow.
+
 To use the typed ranking v2 explicitly:
 
 ```bash

@@ -11,6 +11,39 @@
 
 ---
 
+### W-049 · B-007 구현 — 클라이언트 미러 시딩 (`ains fetch --seed`)
+
+**요청**
+
+- P2 순차 진행의 두 번째(B-009 후속). 신규 설치자의 워밍업 공백을 미러 이력 병합으로 제거
+
+**수행 작업**
+
+- 계약 14.3 확정(코드보다 먼저): 병합 충돌 규칙(내용은 로컬 우선·시각 범위만 확장·스냅샷은 최신 observed_at 우선), quality 게시값 유지(랭킹 자격 보전), 파일 단위 오류 격리, `mirror.repo`/`mirror.tag` 설정
+- `src/core/mirror/import.ts`: `parseMirrorBucket` 검증 + `mergeMirrorBucket` 멱등 병합(결정적 ID 활용, 병합 후 primary 재계산)
+- `src/core/mirror/seed.ts`: manifest 다운로드→자산별 sha256 검증→gunzip→병합 오케스트레이션. 네트워크는 `MirrorFetcher`로 주입 가능(테스트 대체)
+- `fetch --seed` 플래그: 시딩 실패가 일반 수집을 깨지 않게 격리, 요약 한 줄 출력
+- config에 `mirror` 스키마 추가 + E2E 중 발견한 UTF-8 BOM config 파싱 실패 수정(`loadConfig` BOM 제거) 및 회귀 테스트
+- README(영/한)에 시딩 안내 추가(문서-기능 일치)
+
+**변경 파일**
+
+- docs/requirements-contract.md(14.3), src/core/mirror/import.ts(신설), src/core/mirror/seed.ts(신설), src/cli/commands/fetch.ts, src/core/config.ts, tests/core/mirrorImport.test.ts(신설 6건), tests/core/config.test.ts(+1), README.md, README.ko.md, CHANGELOG.md, docs/plans/backlog.md(B-007 완료), Worklog.md(본 기록)
+
+**검증**
+
+- typecheck·lint EXIT=0, 테스트 35파일 254건(+7) 전부 통과. 병합 테스트는 실제 export→병합 왕복으로 형식 일치를 보장, 시딩 후 `getNearestBaseline` 24h 기준점 복원까지 확인
+- 라이브 E2E(임시 AINS_HOME=신규 설치 시뮬레이션): 실제 GitHub 미러에서 파일 32/32 병합 · Story +395 · Sighting +396 · Snapshot +5,709, 직후 v2 community hot이 coverage full로 즉시 작동. EXIT=0
+
+**판단 근거**
+
+- Story·Sighting ID가 결정적 해시라 미러와 로컬이 같은 관측에 같은 ID를 생성 → 별도 매핑 없이 유일 키 병합으로 충분
+- quality를 게시값 그대로 두는 이유: 별도 표기 시 랭킹 자격(quality=live)에서 제외되어 시딩 목적(성장 기준점)이 무산됨(계약 14.3에 명문화)
+
+**결과**
+
+- 완료: B-007 종결. P2 전부 완료. 남은 0.3.0 축은 7/19 게이트 재평가(B-006) — 시딩 덕에 신규 사용자도 미러 이력만큼 워밍업 단축
+
 ### W-048 · B-009 구현 — doctor GitHub 토큰 미설정 경고
 
 **요청**

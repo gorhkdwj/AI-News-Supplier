@@ -116,6 +116,12 @@ const ConfigSchema = z.object({
       relearnAfterDays: z.number().int().positive().default(90),
     })
     .prefault({}),
+  mirror: z
+    .object({
+      repo: z.string().default('gorhkdwj/AI-News-Supplier'),
+      tag: z.string().default('mirror-data'),
+    })
+    .prefault({}),
 });
 
 export type ResolvedConfig = z.infer<typeof ConfigSchema>;
@@ -131,7 +137,8 @@ export function loadConfig(): ResolvedConfig {
 
   if (existsSync(path)) {
     try {
-      userRaw = JSON.parse(readFileSync(path, 'utf8'));
+      // Windows 메모장·PowerShell이 저장하는 UTF-8 BOM은 JSON.parse가 거부하므로 제거한다.
+      userRaw = JSON.parse(readFileSync(path, 'utf8').replace(/^\uFEFF/, ''));
     } catch {
       logger.warn(`설정 파일 파싱 실패, 기본값 사용: ${path}`);
       userRaw = {};
