@@ -9,6 +9,7 @@ Each release is also published as a [GitHub Release](https://github.com/gorhkdwj
 
 ### Added
 
+- **`ains doctor` now warns when no GitHub token is configured**: without one, the GitHub API allows only 60 requests/hour and collection can silently degrade. The warning links to token creation (read-only, no scopes needed) and shows where to put it. The token value itself is never printed.
 - **Learning session evidence now carries triage signals**: each source line includes the representative discussion URL (when one exists), score, and comment count, so a consuming agent can route around blocked originals (e.g. HTTP 403) and gauge how much material sits behind a link before fetching it.
 - **Session instructions now include fallback rules**: content obtained via a discussion page must be marked as second-hand, and when evidence is too thin the agent is told to shrink the session, search for more material, suggest retrying later, or stop and report — never fabricate.
 

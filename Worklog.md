@@ -11,6 +11,34 @@
 
 ---
 
+### W-048 · B-009 구현 — doctor GitHub 토큰 미설정 경고
+
+**요청**
+
+- P2 두 태스크 순차 진행 승인("그렇게 진행해줘") — B-009 먼저
+
+**수행 작업**
+
+- doctor에 GitHub 토큰 존재 진단 추가: 설정 시 "설정됨 (rate limit 5,000회/시)", 미설정 시 60회/시 경고 + 읽기 전용 발급 링크 + 설정 위치(config.json tokens.github / GITHUB_TOKEN) 안내. 토큰 값은 출력하지 않음(헌법 7절)
+- tests/cli/doctor.test.ts 신설(spawn 방식, GITHUB_TOKEN 격리): 미설정 경고 출력 / 설정 시 값 미노출 검증 2건
+
+**변경 파일**
+
+- src/cli/commands/doctor.ts, tests/cli/doctor.test.ts(신설), CHANGELOG.md, docs/plans/backlog.md(B-009 완료), Worklog.md(본 기록)
+
+**검증**
+
+- typecheck·lint EXIT=0, 테스트 34파일 247건(+2) 전부 통과
+- 실기 E2E: 실 환경 doctor에서 "GitHub 토큰 : 설정됨" 출력·토큰 값 미노출 확인
+
+**판단 근거**
+
+- T-010(rate limit 소진)의 재발 방지를 신규 사용자에게 확장: 조용한 성능 저하를 진단 시점의 명시적 안내로 전환. 계약 갱신 불요(진단 출력은 데이터 스키마·지표·MCP 계약 대상 아님)
+
+**결과**
+
+- 완료: B-009 종결. 이어서 B-007(미러 시딩) 착수
+
 ### W-047 · B-006 사전 판단 — 게이트 지표 현 시점 실측, 전환 보류 결정
 
 **요청**

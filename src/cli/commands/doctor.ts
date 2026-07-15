@@ -25,6 +25,16 @@ export function registerDoctor(program: Command): void {
         `보존 정책   : ${config.retentionDays == null ? '영구 보존' : `${config.retentionDays}일`}`,
       );
       lines.push(`스케줄      : ${describeScheduleHealth(scheduleHealth())}`);
+      // 토큰 값은 절대 출력하지 않는다(보안 원칙) — 존재 여부만 진단한다.
+      if (config.tokens.github) {
+        lines.push('GitHub 토큰 : 설정됨 (rate limit 5,000회/시)');
+      } else {
+        lines.push('GitHub 토큰 : 없음 — 시간당 60회 제한으로 수집이 실패할 수 있습니다');
+        lines.push('              발급(권한 불필요, 읽기 전용): https://github.com/settings/tokens');
+        lines.push(
+          '              설정: ~/.ai-news-supplier/config.json 의 tokens.github 또는 GITHUB_TOKEN 환경변수',
+        );
+      }
       const db = openDb();
       try {
         const integrity = db.pragma('integrity_check', { simple: true });
