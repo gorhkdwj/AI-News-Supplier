@@ -185,7 +185,7 @@ The complete CLI reference, all 9 MCP tools, natural-language task examples, ran
 
 ## Status
 
-- Version: `0.3.0`
+- Version: `0.3.1`
 - Schema: v2 Story/Sighting/Metric Snapshot
 - Default ranking: `v2` (since 0.3.0, after passing the approval gate); `--ranking legacy` remains until 0.4.0
 

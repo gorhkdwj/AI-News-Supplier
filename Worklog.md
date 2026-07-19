@@ -11,6 +11,39 @@
 
 ---
 
+### W-064 · B-004 구현(세션 근거 버킷 quota) 및 0.3.1 패키징
+
+**요청**
+
+- "다른 태스크도 좀 더 해서 묶어서 배포하자" — 0.3.1 = B-005 + B-004 묶음으로 확정(B-008-①은 코드 무변경이라 릴리스와 무관, ②③은 사용자 설정 파일 접근이라 별도 설계 필요로 제외)
+
+**수행 작업**
+
+- 튜닝 근거 실측(out/b004-distribution.mjs, 읽기 전용): bm25 상위 40건이 'agent' 레포 36/40, 'model' 논문 31/40, 'benchmark' 논문 29/40로 편중. 120건 과요청 시 전 버킷 공급 존재 확인 → 임의 quota 수치 대신 **기본 floor(40/4) + 잔여 순환 재배분**(Overview 10.3과 동일 설계 언어)으로 설계 확정
+- 계약 11.4 신설(코드보다 선행): 3배 과요청, 버킷별 기본 할당·재배분 규칙, `search.matched` 의미 갱신(과요청 한도 내 매칭 수), 11.3 앵커 생존 보장
+- 코어(session.ts): `applyBucketQuota` 구현, fetchLimit 120, 근거 확정 후 토론 URL 조회를 최종 40건으로 축소
+- 테스트 +2: 편중 재현(논문 30·커뮤니티 15·공식 5 → 5·20·0·15 선별, matched 50)·앵커 생존(초과 버킷에서도 맨 앞 유지)
+- 0.3.1 패키징: CHANGELOG [0.3.1] - 2026-07-20(Added B-005, Changed B-004) + 비교 링크, package.json·lockfile 0.3.1, README 버전 표기
+
+**변경 파일**
+
+- docs/requirements-contract.md, src/core/learning/session.ts, tests/core/learning.test.ts
+- CHANGELOG.md, package.json, package-lock.json, README.md, README.ko.md, docs/plans/backlog.md, Worklog.md
+
+**검증**
+
+- typecheck·lint·test(35파일 **264개**, +2)·build·`npm pack --dry-run`(0.3.1 tgz) 전부 EXIT=0
+- 실 DB: `learn session "agent"` 버킷이 36/40 레포 편중 → **official 2 · papers 13 · repos 13 · discussion 12**(matched 120)로 균형화 — 손계산 예측과 정확 일치
+- publish 전 `npm whoami` 선확인(T-015 재발 방지): gorhkdwj, EXIT=0 — 인증 유효
+
+**판단 근거**
+
+- quota를 고정 수치로 박는 대신 Overview 10.3과 같은 배분 규칙을 재사용해 계약의 설계 언어를 통일하고 튜닝 매개변수를 과요청 배수(3배) 하나로 축소. 3배는 실측에서 전 버킷 공급이 확인된 최소 배수
+
+**결과**
+
+- B-004 완료. 0.3.1 publish만 잔여(사용자 OTP). publish 후 GitHub Release(D-011)·배포 검증 예정
+
 ### W-063 · B-005 구현 — 수집 항목에서 학습 세션 직행 (--from-item)
 
 **요청**

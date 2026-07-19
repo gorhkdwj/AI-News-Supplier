@@ -5,11 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Each release is also published as a [GitHub Release](https://github.com/gorhkdwj/AI-News-Supplier/releases) with the same notes.
 
-## [Unreleased]
+## [0.3.1] - 2026-07-20
 
 ### Added
 
 - **`ains learn session --from-item <story-id>` / MCP `design_learning_session.from_item`** (B-005, D-014): design a learning session directly from a collected item — the natural follow-up to spotting something interesting in `ains trends`. The tool performs no topic extraction (the item title becomes the search topic verbatim; judgment is delegated to the calling agent); the originating item is always included in the evidence, first in its bucket, and the instructions state the session's origin. `topic` and `from_item` are mutually exclusive (exactly one required).
+
+### Changed
+
+- **Session evidence is no longer dominated by a single bucket** (B-004, contract §11.4): broad topics used to fill the 40-item evidence list with whatever type ranks highest ('agent' returned 36/40 repos, 'model' 31/40 papers). The search now over-fetches 3× and allocates `floor(40/4)` per bucket (official/papers/repos/discussion) with round-robin redistribution of leftover slots — the same allocation scheme the v2 overview uses. `search.matched` now reports matches within the 120-item fetch window, which can exceed the number of evidence items actually included (≤40).
 
 ## [0.3.0] - 2026-07-19
 
@@ -70,6 +74,7 @@ Initial public release.
 - OS scheduler integration (`ains schedule`, Windows schtasks / Unix crontab) and `ains doctor` diagnostics.
 - Data retention: stories 90 days (configurable), metric snapshots 14 days, Reddit content 48 hours max.
 
+[0.3.1]: https://github.com/gorhkdwj/AI-News-Supplier/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gorhkdwj/AI-News-Supplier/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/gorhkdwj/AI-News-Supplier/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gorhkdwj/AI-News-Supplier/releases/tag/v0.1.0
