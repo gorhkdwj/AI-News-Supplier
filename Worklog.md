@@ -11,6 +11,42 @@
 
 ---
 
+### W-057 · 게이트 통과 확인, B-006 v2 기본 전환 및 0.3.0 패키징
+
+**요청**
+
+- 인수인계 절차 수행: ① 게이트 재실측 확인 ② 통과 시 B-006 v2 기본 전환(out/b006-switch-checklist.md A~E) ③ B-010 패키징(publish 직전까지)
+
+**수행 작업**
+
+- 게이트: 15:37 실측 91.1% → `fetch --seed` 미러 백필(스냅샷 +873) 후 93.9%. 미달 원인이 측정 창 위치(24h 창이 7/18 공백에 걸림)임을 확인하고, 지정 재실측 시각 23:00 창으로 시뮬레이션(out/gate-sim.mjs) → 195/199(98.0%)로 기준 95% 상회. 창 데이터는 미러 병합으로 확정 상태라 조기 통과로 판정(D-013)
+- B-006: request.ts 기본값 반전(`explicitRanking ?? 'v2'`), CLI `--ranking` 설명, MCP get_trends 설명 갱신. 계약 250행(0.2.0 오기→0.3.0 정정)·331행 롤아웃 절 코드보다 선행 갱신
+- 테스트: request.test 기본값 v2 전환 + 명시 legacy 유지 테스트 신설, service.test 2곳 `{rankingVersion:'legacy'}` 명시화, MCP smoke 기본 호출을 v2 4섹션 검증으로 교체 + legacy 명시 테스트 보존. legacy 기대 전수 재grep으로 누락 없음 확인
+- 문서: README.md·README.ko.md(54행 안내 반전, 상태 절), docs/index.html 콜아웃 반전
+- 패키징: CHANGELOG [Unreleased]→[0.3.0] - 2026-07-19 + Breaking 항목 + 비교 링크, package.json·package-lock 0.3.0, README 버전 표기
+
+**변경 파일**
+
+- src/core/trends/request.ts, src/cli/commands/trends.ts, src/mcp/tools.ts
+- tests/core/trends/request.test.ts, tests/core/trends/service.test.ts, tests/mcp/smoke.test.ts
+- docs/requirements-contract.md, README.md, README.ko.md, docs/index.html
+- CHANGELOG.md, package.json, package-lock.json, Decisionlog.md(D-013), Worklog.md
+
+**검증**
+
+- typecheck·lint·test(35파일 256개)·build·`npm pack --dry-run`(ai-news-supplier-0.3.0.tgz) 전부 EXIT=0
+- 실 CLI: 옵션 없는 `trends`가 v2 overview 4섹션(Official·Repos·Community·Research) 출력, `--ranking legacy` 정상 동작, 각 EXIT=0. `--version` 0.3.0
+- 실 MCP(dist): stdio JSON-RPC로 옵션 없는 get_trends 호출 → sections 4채널 + ranking.version=v2, stdout 오염 없음
+
+**판단 근거**
+
+- 24h coverage 미달(93.9%)은 데이터 결손이 아니라 측정 시점 문제. 23:00 창의 스냅샷은 이미 확정되어 재실측 결과가 달라질 수 없음을 시뮬레이션으로 확인 → 1주 보류 대신 조기 전환(D-013). 최종 안전판으로 publish는 23:00 공식 재실측 파일 확인 후 사용자가 수행
+- 인수인계의 "D-012 신설"은 D-012가 타 세션(샌드박스 결정)에 선점되어 D-013으로 기록
+
+**결과**
+
+- B-006·B-010 준비 완료. 남은 것: 23:00 공식 재실측 확인 → 사용자 `npm publish`(OTP) → GitHub Release(D-011) → 레지스트리·실설치 검증. B-004 포함 여부·B-014·B-015는 사용자 결정 대기
+
 ### W-056 · B-006 전환 사전 정찰 — legacy 기본 전제 지점 전수 조사
 
 **요청**

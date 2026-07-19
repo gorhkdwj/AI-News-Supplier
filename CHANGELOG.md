@@ -5,7 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Each release is also published as a [GitHub Release](https://github.com/gorhkdwj/AI-News-Supplier/releases) with the same notes.
 
-## [Unreleased]
+## [0.3.0] - 2026-07-19
+
+### Breaking
+
+- **The default ranking is now v2** (B-006, D-013): plain `ains trends` / MCP `get_trends` without options returns the v2 overview briefing (Official · Repos · Community · Research sections) instead of the legacy hotness list. The approval gate (contract §13) passed on 2026-07-19: 24h/7d baseline coverage, top-20 full coverage, precision@20 ≥ 90% on both labeled channels, and community score availability all cleared. The previous behavior remains available with `--ranking legacy` / `ranking_version: "legacy"` for one more release and will be removed in 0.4.0.
 
 ### Added
 
@@ -60,5 +64,6 @@ Initial public release.
 - OS scheduler integration (`ains schedule`, Windows schtasks / Unix crontab) and `ains doctor` diagnostics.
 - Data retention: stories 90 days (configurable), metric snapshots 14 days, Reddit content 48 hours max.
 
+[0.3.0]: https://github.com/gorhkdwj/AI-News-Supplier/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/gorhkdwj/AI-News-Supplier/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gorhkdwj/AI-News-Supplier/releases/tag/v0.1.0
