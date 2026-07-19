@@ -11,6 +11,73 @@
 
 ---
 
+### W-063 · B-005 구현 — 수집 항목에서 학습 세션 직행 (--from-item)
+
+**요청**
+
+- P2(B-005) 착수 승인 ("진행해줘", 배경·내용·영향 브리핑 후)
+
+**수행 작업**
+
+- 계약 11.3 신설(코드보다 선행): topic/from-item 양자택일, 미존재 ID 오류, 제목=검색 토픽(D-014 에이전트 위임), 출발 항목 상시 포함(중복 시 버킷 맨 앞 1회), additive `from_item` 메타
+- 코어(session.ts): `SessionInputError` 신설, `SessionOptions.fromItemId`, 앵커 주입·중복 제거, 출발 표기 지시문, 검색 0건+앵커 시 재시도 강제 대신 보강 안내로 분기(기존 0건 안내와 구분)
+- CLI: `session [topic]` + `--from-item <id>`(전역 catch로 오류 메시지·exit 1). MCP: `from_item` 입력 추가, SessionInputError→InvalidParams(-32602), 응답에 `from_item` 에코, 설명 갱신
+- 문서: README 양 언어판·docs/index.html 예시 추가, CHANGELOG [Unreleased] Added
+- 사전 확인: `toFtsQuery`가 토큰 추출+따옴표 감싸기로 제목의 특수문자를 안전 처리함을 검증 후 설계 확정
+
+**변경 파일**
+
+- docs/requirements-contract.md, src/core/learning/session.ts, src/cli/commands/learn.ts, src/mcp/tools.ts
+- tests/core/learning.test.ts(+4), tests/mcp/smoke.test.ts(+2)
+- README.md, README.ko.md, docs/index.html, CHANGELOG.md, docs/plans/backlog.md, Worklog.md
+
+**검증**
+
+- typecheck·lint·test(35파일 **262개**, +6)·build 전부 EXIT=0
+- 실 CLI(실데이터): `--from-item acfba55…`(Release v0.51.0) → EXIT=0, 출발 항목 표기 확인. topic+from-item 동시 지정 EXIT=1, 인자 없음 EXIT=1(오류 메시지 출력)
+- MCP는 vitest smoke(stdio 실서버)로 from_item 정상·양자택일 위반 -32602 확인
+
+**판단 근거**
+
+- 검색 0건이어도 출발 항목이 근거로 존재하므로 topic 0건과 같은 "재시도 강제" 안내는 부적합 → 계약 11.3에 구분 명시 후 구현
+- FTS는 앵커 자신을 항상 매칭하므로(코퍼스에 존재) 중복 제거·맨 앞 배치를 계약에 못박음. 단 조회 윈도(30일) 밖 항목은 검색 0건이 가능해 이 경계를 테스트로 고정
+- 인수인계 규칙대로 최대 W-번호 재확인: 타 세션이 W-062를 선점해 본 항목은 W-063
+
+**결과**
+
+- B-005 완료. 0.3.1 릴리스 대기(패키징 시 CHANGELOG 확정·버전 bump만). 다음: B-008-①(MCP 레지스트리 등록) 또는 B-004(quota, 실데이터 튜닝)
+
+### W-062 · GitHub MCP PAT 연결 재검증
+
+**요청**
+
+- GitHub 토큰 등록 후 MCP 연결 상태 재확인
+
+**수행 작업**
+
+- `codex mcp get github`로 GitHub MCP 활성화, 엔드포인트, `GITHUB_PAT_TOKEN` 연결 설정 확인
+- 토큰 값을 출력하지 않고 프로세스·Windows 사용자·시스템 환경 변수 범위를 분리해 존재 여부 확인
+- Windows 사용자 환경에 등록된 PAT를 사용해 GitHub MCP `initialize` 요청을 전송하고 실제 인증·연결 응답 확인
+
+**변경 파일**
+
+- Worklog.md
+
+**검증**
+
+- 설정: `enabled: true`, `transport: streamable_http`, `bearer_token_env_var: GITHUB_PAT_TOKEN`
+- 환경 변수: 프로세스 범위 없음, 사용자 범위 있음, 시스템 범위 없음
+- 원격 연결: GitHub MCP `initialize` 응답 HTTP 200 및 서버 capabilities 수신
+
+**판단 근거**
+
+- 설정 조회만으로 토큰 유효성을 단정하지 않고, 비밀값을 노출하지 않는 읽기 전용 초기화 요청으로 원격 인증까지 분리 검증
+
+**결과**
+
+- 토큰과 원격 GitHub MCP 인증은 정상. 현재 Codex 프로세스에는 사용자 환경 변수가 상속되지 않았으므로 완전 재시작 후 새 세션에서 도구 노출 여부 재확인 필요
+- Decisionlog 변경 없음, Troubleshootinglog 추가 없음
+
 ### W-061 · GitHub Release v0.3.0 발행 — B-010 완결
 
 **요청**

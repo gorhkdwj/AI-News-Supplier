@@ -130,6 +130,7 @@ ains show <story-id>
 # 학습 후보, 세션 설계, 이력
 ains learn candidates --limit 5
 ains learn session "RAG" --level beginner --time 30
+ains learn session --from-item <story-id>   # 수집 항목에서 바로 세션 설계
 ains learn record "RAG" --time 30 --notes "기초 개념 학습"
 ains history
 

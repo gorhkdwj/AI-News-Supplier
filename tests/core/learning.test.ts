@@ -4,7 +4,8 @@ import { upsertItems } from '../../src/core/store/itemStore.js';
 import { recordLearning, findRecentLearning } from '../../src/core/store/learningStore.js';
 import { extractTerms, normalizeTopic } from '../../src/core/learning/topics.js';
 import { mineLearningCandidates } from '../../src/core/learning/candidates.js';
-import { designLearningSession } from '../../src/core/learning/session.js';
+import { SessionInputError, designLearningSession } from '../../src/core/learning/session.js';
+import { itemId } from '../../src/core/normalize.js';
 import type { CollectedItem } from '../../src/core/types.js';
 
 // searchItems가 실제 시계로 조회 윈도를 계산하므로 fixture 시각은 상대값이어야 한다 (T-013)
@@ -178,5 +179,64 @@ describe('designLearningSession', () => {
     expect(session.context.repos.length).toBeGreaterThanOrEqual(1);
     expect(session.instructions).toContain('핫레포/모델 중 하나를 골라');
     expect(session.instructions).not.toContain('핫레포/모델 자료가 없으므로');
+  });
+
+  it('topic과 fromItemId를 함께 주거나 둘 다 없으면 입력 오류다 (계약 11.3, B-005)', () => {
+    const id = itemId('https://e.com/t1');
+    expect(() => designLearningSession(db, { topic: 'transformer', fromItemId: id })).toThrow(
+      SessionInputError,
+    );
+    expect(() => designLearningSession(db, {})).toThrow(SessionInputError);
+  });
+
+  it('존재하지 않는 항목 ID는 입력 오류로 처리한다 (계약 11.3, B-005)', () => {
+    expect(() => designLearningSession(db, { fromItemId: 'ffffffffffffffff' })).toThrow(
+      SessionInputError,
+    );
+    expect(() => designLearningSession(db, { fromItemId: 'ffffffffffffffff' })).toThrow(
+      /ffffffffffffffff/,
+    );
+  });
+
+  it('fromItemId는 제목을 토픽으로 쓰고 출발 항목을 근거 맨 앞에 한 번만 포함한다 (계약 11.3, B-005)', () => {
+    const anchorId = itemId('https://e.com/t1');
+    const session = designLearningSession(db, { fromItemId: anchorId });
+    expect(session.topic).toBe('Transformer architecture explained');
+    expect(session.fromItem).toEqual({
+      id: anchorId,
+      title: 'Transformer architecture explained',
+      url: 'https://e.com/t1',
+    });
+    expect(session.instructions).toContain('에서 출발했습니다');
+    // 검색 결과에 자기 자신이 잡혀도(FTS에 존재) 앵커는 중복 없이 버킷 맨 앞 한 번
+    expect(session.context.official[0]!.id).toBe(anchorId);
+    expect(session.context.official.filter((i) => i.id === anchorId)).toHaveLength(1);
+    expect(session.search.mode).toBe('exact');
+    expect(session.search.matched).toBeGreaterThanOrEqual(1);
+  });
+
+  it('조회 윈도 밖의 출발 항목은 검색 0건이어도 세션이 성립하고 보강 안내를 붙인다 (계약 11.3, B-005)', () => {
+    const OLD_ISO = new Date(Date.now() - 40 * 86_400_000).toISOString();
+    upsertItems(
+      db,
+      [
+        {
+          ...item({
+            source: 'rss:openai',
+            url: 'https://e.com/old1',
+            title: 'Ancient quantum widget verifier',
+            type: 'official_update',
+          }),
+          publishedAt: OLD_ISO,
+        },
+      ],
+      NOW_ISO,
+    );
+    const anchorId = itemId('https://e.com/old1');
+    const session = designLearningSession(db, { fromItemId: anchorId });
+    expect(session.search).toEqual({ mode: 'none', matched: 0 });
+    expect(session.instructions).toContain('추가 자료가 검색되지 않았습니다');
+    expect(session.instructions).not.toContain('검색된 자료가 없습니다');
+    expect(session.context.official[0]!.id).toBe(anchorId);
   });
 });

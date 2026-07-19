@@ -140,6 +140,37 @@ describe('MCP stdio 스모크', () => {
     expect(structured.entries.some((e) => e.topic === 'mcp')).toBe(true);
   });
 
+  it('design_learning_session from_item이 출발 항목을 근거로 세션을 설계한다 (계약 11.3, B-005)', async () => {
+    const res = await client.callTool({
+      name: 'design_learning_session',
+      arguments: { from_item: detailId },
+    });
+    const structured = res.structuredContent as {
+      topic: string;
+      instructions: string;
+      from_item: { id: string; title: string; url: string };
+      context: { discussion: Array<{ id: string }> };
+    };
+    expect(structured.topic).toBe('V2 community item for interface parity');
+    expect(structured.from_item.id).toBe(detailId);
+    expect(structured.instructions).toContain('에서 출발했습니다');
+    expect(structured.context.discussion[0]!.id).toBe(detailId);
+  });
+
+  it('design_learning_session에 topic과 from_item을 함께 주면 입력 오류다 (계약 11.3, B-005)', async () => {
+    const result = await client.callTool({
+      name: 'design_learning_session',
+      arguments: { topic: 'transformer', from_item: detailId },
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content).toEqual([
+      expect.objectContaining({
+        type: 'text',
+        text: expect.stringMatching(/-32602.*정확히 하나/),
+      }),
+    ]);
+  });
+
   it('get_trends 기본 호출이 v2 overview 4섹션과 live 시드 항목을 반환한다 (B-006)', async () => {
     const res = await client.callTool({ name: 'get_trends', arguments: { limit: 5 } });
     const structured = res.structuredContent as {

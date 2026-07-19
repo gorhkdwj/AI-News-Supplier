@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Each release is also published as a [GitHub Release](https://github.com/gorhkdwj/AI-News-Supplier/releases) with the same notes.
 
+## [Unreleased]
+
+### Added
+
+- **`ains learn session --from-item <story-id>` / MCP `design_learning_session.from_item`** (B-005, D-014): design a learning session directly from a collected item — the natural follow-up to spotting something interesting in `ains trends`. The tool performs no topic extraction (the item title becomes the search topic verbatim; judgment is delegated to the calling agent); the originating item is always included in the evidence, first in its bucket, and the instructions state the session's origin. `topic` and `from_item` are mutually exclusive (exactly one required).
+
 ## [0.3.0] - 2026-07-19
 
 ### Breaking

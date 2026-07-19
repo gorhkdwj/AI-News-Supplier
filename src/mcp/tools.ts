@@ -12,7 +12,7 @@ import { TrendInputError, resolveTrendRequest } from '../core/trends/request.js'
 import { serializeSighting, serializeTrendResult } from '../core/trends/serialize.js';
 import { getTrendItemDetail, getTrends } from '../core/trends/service.js';
 import { mineLearningCandidates, type EvidenceBuckets } from '../core/learning/candidates.js';
-import { designLearningSession } from '../core/learning/session.js';
+import { SessionInputError, designLearningSession } from '../core/learning/session.js';
 import { recordLearning, getLearningHistory } from '../core/store/learningStore.js';
 
 export interface McpDeps {
@@ -223,25 +223,37 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
       description:
         '특정 토픽의 맥락 자료를 모으고, 에이전트가 학습 세션을 설계·진행하도록 지시문을 반환합니다. ' +
         '수집 데이터가 대부분 영어이므로 topic은 영어 키워드 1~2개를 권장합니다(예: "agent evaluation"). ' +
-        '전체 일치 자료가 없으면 단어별 일치로 자동 완화하며, 그래도 0건이면 search.mode="none"과 재시도 안내를 반환합니다.',
+        '전체 일치 자료가 없으면 단어별 일치로 자동 완화하며, 그래도 0건이면 search.mode="none"과 재시도 안내를 반환합니다. ' +
+        'topic 대신 from_item으로 수집 항목 ID를 지정하면 그 항목에서 출발하는 세션을 설계합니다' +
+        '(제목이 검색 토픽이 되고 해당 항목은 근거에 항상 포함, topic과 정확히 하나만 지정).',
       inputSchema: {
-        topic: z.string().min(1),
+        topic: z.string().min(1).optional(),
+        from_item: z.string().min(1).optional(),
         level: levelEnum.optional(),
         time_budget_minutes: z.number().int().positive().optional(),
       },
     },
     (args) => {
-      const session = designLearningSession(db, {
-        topic: args.topic,
-        level: args.level ?? config.learning.defaultLevel,
-        timeBudgetMinutes: args.time_budget_minutes ?? 45,
-      });
-      return jsonResult({
-        topic: session.topic,
-        context: bucketsToBrief(session.context),
-        instructions: session.instructions,
-        search: { mode: session.search.mode, matched: session.search.matched },
-      });
+      try {
+        const session = designLearningSession(db, {
+          topic: args.topic,
+          fromItemId: args.from_item,
+          level: args.level ?? config.learning.defaultLevel,
+          timeBudgetMinutes: args.time_budget_minutes ?? 45,
+        });
+        return jsonResult({
+          topic: session.topic,
+          context: bucketsToBrief(session.context),
+          instructions: session.instructions,
+          search: { mode: session.search.mode, matched: session.search.matched },
+          ...(session.fromItem === undefined ? {} : { from_item: session.fromItem }),
+        });
+      } catch (error) {
+        if (error instanceof SessionInputError) {
+          throw new McpError(ErrorCode.InvalidParams, error.message);
+        }
+        throw error;
+      }
     },
   );
 

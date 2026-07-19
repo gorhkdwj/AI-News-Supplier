@@ -130,6 +130,7 @@ ains show <story-id>
 # Learning candidates, session design, history
 ains learn candidates --limit 5
 ains learn session "RAG" --level beginner --time 30
+ains learn session --from-item <story-id>   # design a session from a collected item
 ains learn record "RAG" --time 30 --notes "studied the basics"
 ains history
 
