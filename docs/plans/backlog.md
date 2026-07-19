@@ -37,7 +37,7 @@
 | B-004 | 세션 근거 버킷별 quota | 피드백 ④ (W-040) | 광범위 토픽에서만 발생(limit 40 도달 시 논문 편중). 권장안: 1회 검색 후 버킷별 상한 + 잔여 재배분. quota 수치는 실데이터 튜닝 필요(`확인 필요`) | 대기 |
 | B-005 | `learn session --from-item <id>` | 피드백 ③ (W-040) | **선행**: B-015 결정 완료(에이전트 위임, D-014). 0.3.0 publish 후 착수(publish 전 main에 얹으면 tarball에 섞임) | 착수 가능 |
 | B-008 | 발견성 3종 | W-035 식별 | MCP 레지스트리 등록 / `ains setup` 명령 / MCPB 번들. 각각 독립 배포 가능(레지스트리 등록은 코드 변경 없음)이라 0.3.0에 묶일 필요 없음 | 대기 |
-| B-010 | 0.3.0 publish 절차 | D-011 | CHANGELOG [Unreleased] → 0.3.0 전환, GitHub Release 노트 동시 발행. 다른 태스크와 묶어 일괄 publish 가능하므로 후순위(사용자 지시, 2026-07-15 P1→P3 이동) | **npm publish 완료(2026-07-19 23:50, W-060)** — GitHub Release 노트 발행만 잔여 |
+| B-010 | 0.3.0 publish 절차 | D-011 | CHANGELOG [Unreleased] → 0.3.0 전환, GitHub Release 노트 동시 발행. 다른 태스크와 묶어 일괄 publish 가능하므로 후순위(사용자 지시, 2026-07-15 P1→P3 이동) | **완료(W-060·W-061)** — npm publish(23:50) + GitHub Release v0.3.0 발행(23:55, Latest) |
 
 ### 권장 진행 순서 (달력 기준)
 

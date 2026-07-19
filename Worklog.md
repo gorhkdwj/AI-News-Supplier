@@ -11,6 +11,35 @@
 
 ---
 
+### W-061 · GitHub Release v0.3.0 발행 — B-010 완결
+
+**요청**
+
+- "다음 작업 수행해줘" (우선순위표 P1 잔여분)
+
+**수행 작업**
+
+- CHANGELOG 0.3.0 절을 Node로 추출해 릴리스 노트 생성(D-011 동일 내용 원칙, 끝에 Claude Code 표기). PowerShell 5.1 Get-Content가 BOM 없는 UTF-8을 ANSI로 읽어 한글·특수문자가 깨지는 문제를 발견하고 Node 재생성으로 우회
+- `gh release create v0.3.0` 발행: 제목 "v0.3.0 — v2 ranking by default, cold-start mirror seeding, learning session upgrades"(v0.2.0 명명 규칙 준수), 태그 v0.3.0 @ main
+- 검증: isDraft/isPrerelease=False, **Latest 지정**, publishedAt 23:55 KST, 본문 UTF-8 무결(·, §, ≥ 확인)
+- 백로그 B-010 → 완료
+
+**변경 파일**
+
+- docs/plans/backlog.md, Worklog.md (릴리스 노트 파일은 out/, git 제외)
+
+**검증**
+
+- gh release view/list로 메타데이터·본문·Latest 지정 확인
+
+**판단 근거**
+
+- 인코딩 깨진 본문을 그대로 발행하면 공개 릴리스 노트가 오염되므로 발행 전 무결성 확인을 절차에 포함
+
+**결과**
+
+- **B-010 완결. 0.3.0 릴리스 전 과정 종료**(게이트 → 전환 → 패키징 → npm publish → Release). 다음: P2 B-005 착수 가능
+
 ### W-060 · 0.3.0 npm publish 성공 및 배포 검증
 
 **요청**
