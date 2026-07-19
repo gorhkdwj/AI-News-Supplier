@@ -215,6 +215,45 @@ describe('designLearningSession', () => {
     expect(session.search.matched).toBeGreaterThanOrEqual(1);
   });
 
+  it('한 유형이 상위를 독식해도 버킷 quota가 편중을 막고 잔여를 재배분한다 (계약 11.4, B-004)', () => {
+    // 논문 30 + 커뮤니티 15 + 공식 5 = 50건 매칭 → 근거는 40건으로 선별
+    const flood: CollectedItem[] = [];
+    for (let i = 0; i < 30; i++)
+      flood.push(item({ source: 'arxiv', url: `https://e.com/qp${i}`, title: `Quota paper study ${i}`, type: 'paper' }));
+    for (let i = 0; i < 15; i++)
+      flood.push(item({ source: 'hackernews', url: `https://e.com/qd${i}`, title: `Quota discussion thread ${i}`, score: 10 }));
+    for (let i = 0; i < 5; i++)
+      flood.push(item({ source: 'rss:openai', url: `https://e.com/qo${i}`, title: `Quota official update ${i}`, type: 'official_update' }));
+    upsertItems(db, flood, NOW_ISO);
+
+    const session = designLearningSession(db, { topic: 'quota' });
+    expect(session.search.matched).toBe(50);
+    // 기본 10 + 잔여 순환 재배분: official 5(전량), papers 20, repos 0, discussion 15(전량) = 40
+    expect(session.context.official).toHaveLength(5);
+    expect(session.context.papers).toHaveLength(20);
+    expect(session.context.repos).toHaveLength(0);
+    expect(session.context.discussion).toHaveLength(15);
+  });
+
+  it('출발 항목은 초과 공급 버킷에서도 quota에 항상 살아남는다 (계약 11.4 × 11.3)', () => {
+    const flood: CollectedItem[] = [];
+    for (let i = 0; i < 30; i++)
+      flood.push(item({ source: 'arxiv', url: `https://e.com/ap${i}`, title: `Anchor quota paper ${i}`, type: 'paper' }));
+    flood.push(item({ source: 'arxiv', url: 'https://e.com/anchor', title: 'Anchor quota paper origin', type: 'paper' }));
+    upsertItems(db, flood, NOW_ISO);
+
+    const anchorId = itemId('https://e.com/anchor');
+    const session = designLearningSession(db, { fromItemId: anchorId });
+    expect(session.context.papers[0]!.id).toBe(anchorId);
+    expect(session.context.papers.filter((i) => i.id === anchorId)).toHaveLength(1);
+    const total =
+      session.context.official.length +
+      session.context.papers.length +
+      session.context.repos.length +
+      session.context.discussion.length;
+    expect(total).toBeLessThanOrEqual(40);
+  });
+
   it('조회 윈도 밖의 출발 항목은 검색 0건이어도 세션이 성립하고 보강 안내를 붙인다 (계약 11.3, B-005)', () => {
     const OLD_ISO = new Date(Date.now() - 40 * 86_400_000).toISOString();
     upsertItems(

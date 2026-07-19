@@ -39,6 +39,50 @@ export interface SessionOptions {
   sinceDays?: number;
 }
 
+/** 세션 근거 한도. 검색은 편중 방지를 위해 이 값의 3배로 과요청한다(계약 11.4). */
+const EVIDENCE_LIMIT = 40;
+const FETCH_MULTIPLIER = 3;
+
+const BUCKET_ORDER = ['official', 'papers', 'repos', 'discussion'] as const;
+
+/**
+ * 버킷별 기본 할당 floor(limit/4) 후 남은 자리를 공급이 남은 버킷에 순서대로
+ * 한 자리씩 순환 배분한다(계약 11.4, Overview 10.3과 동일한 설계).
+ * 버킷 안의 관련도(bm25) 순서는 유지한다.
+ */
+function applyBucketQuota(buckets: EvidenceBuckets, limit: number): EvidenceBuckets {
+  const base = Math.floor(limit / BUCKET_ORDER.length);
+  const taken: Record<(typeof BUCKET_ORDER)[number], number> = {
+    official: 0,
+    papers: 0,
+    repos: 0,
+    discussion: 0,
+  };
+  let total = 0;
+  for (const key of BUCKET_ORDER) {
+    taken[key] = Math.min(base, buckets[key].length);
+    total += taken[key];
+  }
+  while (total < limit) {
+    let progressed = false;
+    for (const key of BUCKET_ORDER) {
+      if (total >= limit) break;
+      if (taken[key] < buckets[key].length) {
+        taken[key]++;
+        total++;
+        progressed = true;
+      }
+    }
+    if (!progressed) break;
+  }
+  return {
+    official: buckets.official.slice(0, taken.official),
+    papers: buckets.papers.slice(0, taken.papers),
+    repos: buckets.repos.slice(0, taken.repos),
+    discussion: buckets.discussion.slice(0, taken.discussion),
+  };
+}
+
 const LEVEL_GUIDE: Record<LearningLevel, string> = {
   beginner: '기초 개념부터 시작하고 전문용어는 쉬운 비유로 풀어서 설명하십시오.',
   intermediate: '핵심 원리와 실무 적용에 초점을 맞추고, 이미 아는 기초는 빠르게 넘어가십시오.',
@@ -165,12 +209,13 @@ export function designLearningSession(db: DB, opts: SessionOptions): LearningSes
   const timeBudget = opts.timeBudgetMinutes ?? 45;
   const sinceDays = opts.sinceDays ?? 30;
   let mode: SessionSearchMode = 'exact';
-  let items = searchItems(db, topic, { sinceDays, limit: 40 });
+  const fetchLimit = EVIDENCE_LIMIT * FETCH_MULTIPLIER;
+  let items = searchItems(db, topic, { sinceDays, limit: fetchLimit });
   if (items.length === 0) {
-    items = searchItems(db, topic, { sinceDays, limit: 40, operator: 'or' });
+    items = searchItems(db, topic, { sinceDays, limit: fetchLimit, operator: 'or' });
     mode = items.length > 0 ? 'relaxed' : 'none';
   }
-  // matched는 검색 매칭 수. 출발 항목은 검색과 무관하게 항상 근거에 포함한다(중복이면 맨 앞으로).
+  // matched는 과요청 한도 안의 검색 매칭 수(계약 11.4). 출발 항목은 검색과 무관하게 항상 포함한다.
   const search: SessionSearchInfo = { mode, matched: items.length };
   const fromItem: SessionFromItem | undefined =
     anchor === undefined ? undefined : { id: anchor.id, title: anchor.title, url: anchor.url };
@@ -178,11 +223,9 @@ export function designLearningSession(db: DB, opts: SessionOptions): LearningSes
     const anchorId = anchor.id;
     items = [anchor, ...items.filter((i) => i.id !== anchorId)];
   }
-  const context = bucketEvidence(items);
-  const discussions = getDiscussionUrls(
-    db,
-    items.map((i) => i.id),
-  );
+  const context = applyBucketQuota(bucketEvidence(items), EVIDENCE_LIMIT);
+  const evidenceIds = BUCKET_ORDER.flatMap((key) => context[key].map((i) => i.id));
+  const discussions = getDiscussionUrls(db, evidenceIds);
   return {
     topic,
     context,
