@@ -11,6 +11,37 @@
 
 ---
 
+### T-014 · elevated Windows 샌드박스 도우미 실행 실패
+
+**발생 상황**
+
+- 2026-07-19, Codex 앱 안에서 `codex mcp login supabase`를 실행하는 과정에서 Windows 샌드박스 도우미 오류가 나타남. Supabase OAuth는 완료됐지만 이후 `codex sandbox` 직접 실행에서도 같은 경로가 멈춤.
+
+**증상**
+
+- Windows 팝업: `codex-windows-sandbox-setup.exe`를 찾을 수 없다는 메시지.
+- elevated 설정에서 샌드박스 명령이 출력 없이 60초 이상 대기 후 timeout.
+- 최초 `codex update`는 `Could not detect the Codex installation method`로 실패.
+
+**확인된 원인**
+
+- 도우미 파일은 standalone release의 `codex-resources`와 앱 런타임에 모두 존재하여 실제 파일 삭제·손상은 아님.
+- 앱 세션의 `CODEX_HOME`은 Orca 런타임 홈이지만 standalone 설치 메타데이터는 `C:\Users\gorhk\.codex`에 있어 자동 업데이트 설치 방식 탐지가 실패함.
+- elevated 초기화가 도우미 실행·관리자 설정 단계에서 완료되지 않음. 전체 경로 전달, UAC 또는 로컬 정책 중 어느 단계가 직접 원인인지는 `확인 필요`.
+- 같은 바이너리에서 `windows.sandbox = "unelevated"`를 지정하면 즉시 성공하므로 공통 샌드박스 엔진이나 프로젝트 설정 문제는 아님.
+
+**조치**
+
+- 설치 메타데이터 위치를 process scope `CODEX_HOME`으로 지정하여 공식 updater 재실행, Codex CLI 0.144.4 → 0.144.6 갱신.
+- 업데이트만으로 elevated 멈춤이 해소되지 않아 공식 fallback인 unelevated를 활성 런타임·사용자 CLI 설정 양쪽에 영구 적용.
+- 영구 설정 상태에서 `codex sandbox` smoke test와 `codex doctor` 재검증 완료.
+
+**재발 방지**
+
+- standalone 업데이트 시 앱이 주입한 `CODEX_HOME`과 설치 메타데이터 경로가 다르면 실제 설치 홈을 process scope로 지정함.
+- Codex 업데이트 후 `codex --version`, `codex doctor`, `codex sandbox -- cmd.exe /d /c echo CODEX_SANDBOX_OK` 순서로 검증함.
+- full access로 영구 우회하지 않음. 향후 elevated setup이 정상화되면 `/setup-default-sandbox`로 재구성한 뒤 elevated로 복귀하고 같은 smoke test를 수행함.
+
 ### T-013 · trends CLI 테스트가 날짜 경과로 CI에서 실패 (시간 의존 fixture)
 
 **발생 상황**
