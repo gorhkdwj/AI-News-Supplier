@@ -11,6 +11,29 @@
 
 ---
 
+### T-015 · 0.3.0 npm publish가 E404로 거부 (실제 원인: 인증 토큰 만료)
+
+**발생 상황**
+
+- 2026-07-19 23:42, 사용자 터미널에서 `npm publish` 실행. prepublishOnly(build + 테스트 256개)와 tarball 생성은 정상 통과.
+
+**증상**
+
+- 최종 PUT 단계에서 `E404 Not Found - PUT https://registry.npmjs.org/ai-news-supplier` — "could not be found or you do not have permission to access it". OTP 프롬프트가 뜨지 않고 곧바로 실패.
+
+**확인된 원인**
+
+- `npm whoami`가 **E401 Unauthorized**를 반환 — `~/.npmrc`의 npm 인증 토큰이 만료/무효 상태. npm은 publish의 권한 실패를 패키지 존재 노출 방지를 위해 403이 아닌 404로 응답하므로 404처럼 보였음. 레지스트리 설정은 정상(registry.npmjs.org), 패키지 소유권도 정상(0.1.0·0.2.0 본인 publish).
+- 0.2.0 publish(7/12)로부터 7일 경과 시점과 부합. 정확한 토큰 만료 정책(세션 만료 vs 7일 만료 토큰)은 `확인 필요`.
+
+**조치**
+
+- 사용자 터미널에서 `npm login` 재인증(브라우저 인증) 후 `npm publish` 재시도. (최종 해결은 재시도 결과 확인 후 갱신)
+
+**재발 방지**
+
+- publish 절차(D-011) 시작 전에 `npm whoami`로 인증 상태를 먼저 확인하는 단계를 추가한다. 401이면 publish 시도 전에 `npm login`부터 수행.
+
 ### T-014 · elevated Windows 샌드박스 도우미 실행 실패
 
 **발생 상황**
