@@ -11,6 +11,68 @@
 
 ---
 
+### W-056 · B-006 전환 사전 정찰 — legacy 기본 전제 지점 전수 조사
+
+**요청**
+
+- "재실측 이전에 먼저 수행할 수 있는 항목" 중 정찰 시행 지시
+
+**수행 작업**
+
+- legacy 기본값을 전제한 지점을 저장소 전체에서 읽기 전용 조사(코드·테스트·문서·MCP)
+- 체크리스트 산출: out/b006-switch-checklist.md (코드 3곳·테스트 4곳·문서 8곳·결정 기록 + 전환 방식·검증 절차)
+- 핵심 발견: ① 전환의 심장부는 request.ts:131-133 한 곳 ② 계약 250행이 "0.2.0부터 기본 v2"로 이미 적혀 코드(실제 legacy)와 불일치 — B-006은 코드를 문서에 맞추는 작업이기도 함 ③ CLI/service 테스트 중 옵션 없는 호출을 legacy로 기대하는 4곳이 회귀 표면(대부분의 v2 테스트는 명시 옵션이라 안전)
+
+**변경 파일**
+
+- Worklog.md(본 기록). 체크리스트는 out/(git 제외)
+
+**검증**
+
+- 전부 grep·read 읽기 전용. 코드 무변경(게이트 통과 전이므로 전환 자체는 미착수)
+
+**판단 근거**
+
+- 기본값 전환은 숨은 전제(테스트 기대·문서 서술)가 위험이므로, 전환 전 전수 목록화로 내일 작업을 "체크리스트 소화"로 전환. 읽기 전용이라 게이트 미달 시에도 버리는 비용은 목록 하나
+
+**결과**
+
+- 정찰 완료. 게이트 통과 확정 시 체크리스트대로 B-006 착수(반나절 이내 추정). 규모: 코드 3곳(핵심 1줄)·테스트 4곳·문서 8곳·D-012 신설
+
+### W-055 · Codex Windows 샌드박스 실행 오류 복구
+
+**요청**
+
+- `codex-windows-sandbox-setup.exe` 오류가 반복될 가능성을 확인한 뒤 해결 진행 요청.
+
+**수행 작업**
+
+- 최신 공식 Codex 매뉴얼과 로컬 CLI 도움말을 기준으로 Windows 샌드박스 동작·fallback 절차 확인.
+- `codex sandbox` 진입을 재현하여 elevated 초기화가 60초 이상 멈추는 현상 확인.
+- `codex doctor --json`으로 설치·설정·인증·런타임 상태 점검. 설치 자체는 consistent였으나 CLI 0.144.4보다 0.144.6이 최신임을 확인.
+- 앱이 주입한 `CODEX_HOME`과 실제 standalone 패키지 위치가 다른 점을 보정하여 `CODEX_HOME=C:\Users\gorhk\.codex` 범위에서 공식 `codex update` 실행, 0.144.6으로 갱신.
+- 업데이트 후에도 elevated 경로가 멈춰 공식 fallback인 `windows.sandbox = "unelevated"`를 Orca 런타임 설정과 사용자 CLI 설정에 적용. 프로젝트의 `sandbox_mode = "read-only"`는 유지.
+
+**변경 파일**
+
+- 사용자 환경: `C:\Users\gorhk\AppData\Roaming\orca\codex-runtime-home\home\config.toml`, `C:\Users\gorhk\.codex\config.toml`
+- 프로젝트 기록: `Worklog.md`, `Decisionlog.md`, `Troubleshootinglog.md`
+- 프로젝트 실행 코드 변경 없음. 기존 `.codex/config.toml` 사용자 변경은 건드리지 않음.
+
+**검증**
+
+- `codex --version` → `codex-cli 0.144.6`.
+- 일회성 override와 영구 설정 적용 후 각각 `codex sandbox -- cmd.exe /d /c echo ...`가 exit 0으로 완료.
+- `codex doctor --summary --ascii --no-color` → sandbox `restricted fs + restricted network`, 설치 consistent, 0 fail. 기존 선택 경고(MCP 로컬 서버 2개 미접속, rollout DB 불일치)는 본 작업 범위 밖.
+
+**판단 근거**
+
+- 공식 Windows 문서는 elevated를 우선 권장하지만 관리자 승인형 설정이 실패하면 unelevated를 fallback으로 사용하도록 명시함. full access로 우회하면 프로젝트 경계가 사라지므로 선택하지 않음.
+
+**결과**
+
+- 동일한 실행 파일 탐색 오류 없이 Windows 샌드박스 명령 실행 성공. 현재 Codex 앱 프로세스는 업데이트 전부터 실행 중이므로 새 버전 완전 반영을 위해 앱 재시작 1회 필요.
+
 ### W-054 · 24h coverage 재실측 예약 — Windows 작업 스케줄러 1회성 등록
 
 **요청**
