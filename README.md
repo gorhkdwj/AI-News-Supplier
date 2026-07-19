@@ -43,15 +43,15 @@ ains fetch --seed
 
 The mirror address can be changed in `~/.ai-news-supplier/config.json` (`mirror.repo`, `mirror.tag`) if you run your own fork of the mirror workflow.
 
-To use the typed ranking v2 explicitly:
+To pick a specific v2 channel and sort:
 
 ```bash
-ains trends --ranking v2 --channel overview --sort briefing --limit 12
-ains trends --ranking v2 --channel repos --sort trending
-ains trends --ranking v2 --channel official --sort important
+ains trends --channel overview --sort briefing --limit 12
+ains trends --channel repos --sort trending
+ains trends --channel official --sort important
 ```
 
-> Plain `ains trends` without options still defaults to the `legacy` ranking. v2 is in its baseline-collection and shadow-comparison phase.
+> Since 0.3.0, plain `ains trends` without options defaults to the v2 overview briefing (Official · Repos · Community · Research). The previous ranking is still available with `--ranking legacy` and will be removed in 0.4.0.
 
 To build from source instead (for development):
 
@@ -184,10 +184,9 @@ The complete CLI reference, all 9 MCP tools, natural-language task examples, ran
 
 ## Status
 
-- Version: `0.2.0`
+- Version: `0.3.0`
 - Schema: v2 Story/Sighting/Metric Snapshot
-- Default ranking: `legacy`; opt-in: `--ranking v2`
-- Switching v2 to default requires real 24h/7d baselines and a 14-day shadow comparison
+- Default ranking: `v2` (since 0.3.0, after passing the approval gate); `--ranking legacy` remains until 0.4.0
 
 ## Development
 

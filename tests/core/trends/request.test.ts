@@ -3,15 +3,23 @@ import { describe, expect, it } from 'vitest';
 import { TrendInputError, resolveTrendRequest } from '../../../src/core/trends/request.js';
 
 describe('resolveTrendRequest', () => {
-  it('keeps the 0.1.0 no-option default on legacy overview/briefing', () => {
+  it('defaults the no-option request to v2 overview/briefing (0.3.0, B-006)', () => {
     expect(resolveTrendRequest({})).toEqual({
-      rankingVersion: 'legacy',
+      rankingVersion: 'v2',
       channel: 'overview',
       sort: 'briefing',
       sources: undefined,
       types: undefined,
       sinceHours: undefined,
       limit: 20,
+    });
+  });
+
+  it('keeps explicit legacy on overview/briefing until 0.4.0 removal', () => {
+    expect(resolveTrendRequest({ rankingVersion: 'legacy' })).toMatchObject({
+      rankingVersion: 'legacy',
+      channel: 'overview',
+      sort: 'briefing',
     });
   });
 

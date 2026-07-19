@@ -140,8 +140,26 @@ describe('MCP stdio 스모크', () => {
     expect(structured.entries.some((e) => e.topic === 'mcp')).toBe(true);
   });
 
-  it('get_trends가 시드 항목을 structuredContent로 반환한다', async () => {
+  it('get_trends 기본 호출이 v2 overview 4섹션과 live 시드 항목을 반환한다 (B-006)', async () => {
     const res = await client.callTool({ name: 'get_trends', arguments: { limit: 5 } });
+    const structured = res.structuredContent as {
+      sections: { channel: string }[];
+      items: { title: string }[];
+    };
+    expect(structured.sections.map((s) => s.channel)).toEqual([
+      'official',
+      'repos',
+      'community',
+      'research',
+    ]);
+    expect(structured.items.some((i) => i.title.includes('V2 community item'))).toBe(true);
+  });
+
+  it('get_trends ranking_version=legacy가 시드 항목을 structuredContent로 반환한다', async () => {
+    const res = await client.callTool({
+      name: 'get_trends',
+      arguments: { ranking_version: 'legacy', limit: 5 },
+    });
     const structured = res.structuredContent as { items: { title: string }[] };
     expect(structured.items.length).toBeGreaterThanOrEqual(1);
     expect(structured.items.some((i) => i.title.includes('Seeded AI trend'))).toBe(true);

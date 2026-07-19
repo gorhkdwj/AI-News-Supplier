@@ -16,7 +16,7 @@ export function registerTrends(program: Command): void {
   program
     .command('trends')
     .description('유형별 AI 트렌드를 보여줍니다')
-    .option('--ranking <version>', '랭킹 버전: legacy,v2')
+    .option('--ranking <version>', '랭킹 버전: v2(기본),legacy(0.4.0 제거 예정)')
     .option('--channel <channel>', '채널: overview,community,official,repos,research')
     .option('--sort <sort>', '정렬: briefing,hot,latest,important,trending,discovery')
     .option('--limit <n>', '표시 개수')

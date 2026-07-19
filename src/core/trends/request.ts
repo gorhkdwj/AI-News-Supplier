@@ -128,9 +128,7 @@ export function resolveTrendRequest(input: TrendRequestInput): ResolvedTrendRequ
     );
   }
 
-  const rankingVersion: TrendRankingVersion =
-    explicitRanking ??
-    (explicitChannel !== undefined || explicitSort !== undefined ? 'v2' : 'legacy');
+  const rankingVersion: TrendRankingVersion = explicitRanking ?? 'v2';
   const sort = explicitSort ?? DEFAULT_SORT[channel];
   if (rankingVersion === 'legacy' && (channel !== 'overview' || sort !== 'briefing')) {
     throw new TrendInputError('Legacy ranking permits only overview/briefing');

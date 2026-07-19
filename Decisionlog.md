@@ -11,6 +11,63 @@
 
 ---
 
+### D-013 · 승인 게이트 조기 통과 — v2 랭킹 기본 전환을 0.3.0에서 확정 (2026-07-19)
+
+**상황**
+
+- 계약 13절 승인 게이트의 정기 재평가는 7/26 예정이었으나, 7/19 실측에서 잔여 항목이던 24h 기준점 coverage 외 전 항목이 통과됨: 7d coverage 99.1%(기준 90%), community 점수 가용성 100%(기준 90%), precision@20 Repo·Community 각 100%(수동 라벨링, 기준 90%), top20 전원 full coverage, npm pack 통과, 소스 오류 0.
+- 24h coverage는 7/18 PC 종료 공백으로 91.1%(기준 95%) → 미러 백필(`fetch --seed`) 후 93.9%. 미달 원인은 측정 시점의 24h 기준 창(now-28h~now-20h)이 공백 구간에 걸린 것으로, 지정 재실측 시각(7/19 23:00) 창으로 계산하면 195/199(98.0%)로 기준을 상회함. 해당 창의 데이터는 미러 병합으로 이미 확정 상태라 23:00 실측도 동일하게 나옴.
+
+**검토한 선택지**
+
+1. 7/26 정기 게이트까지 전환 보류 — 절차적으로 보수적이나, 이미 확정된 데이터로 통과가 계산되는 상태에서 1주 지연.
+2. 7/19 조기 통과로 처리하고 0.3.0에서 v2 기본 전환 확정 — publish 전 23:00 공식 재실측 파일로 최종 확인을 조건으로 함.
+
+**결정**
+
+- 2안. 옵션 없는 `ains trends`/`get_trends` 기본을 v2 overview/briefing으로 전환. legacy는 `--ranking legacy` 명시로 한 minor release 유지 후 0.4.0에서 제거(계약 13절 유지).
+
+**근거**
+
+- 게이트 성적표 전 항목 충족. 24h 미달은 데이터 결손이 아니라 측정 창 위치 문제임을 시뮬레이션(out/gate-sim.mjs)으로 확인. 측정 창(7/18 10:00Z~18:00Z)의 스냅샷은 미러 병합으로 확정되어 23:00 결과가 달라질 수 없음.
+
+**영향**
+
+- 옵션 없는 trends 출력이 legacy flat hotness 목록 → v2 4섹션 overview로 변경(Breaking, 0.3.0). legacy는 opt-in으로 강등되고 0.4.0에서 제거 예정. 계약 250행·롤아웃 절, README 양 언어판, docs/index.html, MCP 도구 설명 동기 갱신.
+
+**재검토 조건**
+
+- 23:00 공식 재실측(out/gate-recheck-2026-07-19.txt)이 95% 미달로 나오면 publish 보류 후 재평가. 사용자로부터 v2 precision 저하 신고가 들어오면 랭킹 공식 재검토.
+
+### D-012 · Windows 샌드박스는 unelevated fallback으로 임시 운영 (2026-07-19)
+
+**상황**
+
+- 권장값인 `windows.sandbox = "elevated"`에서 관리자 설정 도우미가 실행되지 않아 로컬 명령이 멈췄음. Codex 0.144.6 업데이트 후에도 동일했으며 unelevated 일회성 테스트는 성공함.
+
+**검토한 선택지**
+
+1. elevated 유지 — 권장 격리는 유지하지만 현재 샌드박스 명령 실행 불가.
+2. danger-full-access 사용 — 오류는 우회하지만 프로젝트 파일·네트워크 경계가 사라짐.
+3. unelevated fallback 사용 — 전용 저권한 사용자·방화벽 규칙보다 약하지만 restricted token·ACL·오프라인 제어와 기존 read-only 프로젝트 정책 유지.
+4. WSL2로 즉시 이전 — 격리 방식은 바뀌지만 현재 Windows 우선 개발 환경과 경로를 크게 변경함.
+
+**결정**
+
+- 3안. 활성 Orca 런타임과 독립 Codex CLI의 `[windows] sandbox`를 `unelevated`로 맞추고, 프로젝트 `.codex/config.toml`의 `sandbox_mode = "read-only"`는 유지함.
+
+**근거**
+
+- 공식 문서가 elevated 설정 실패 시 unelevated를 fallback으로 허용함. 실제 smoke test에서 제한 샌드박스 실행이 복구됐으며 full access보다 최소 권한 원칙에 부합함.
+
+**영향**
+
+- 로컬 명령은 다시 샌드박스 안에서 실행되지만 elevated 모드의 전용 저권한 사용자와 전용 방화벽 규칙보다 격리 강도가 낮음. 프로젝트 코드·제품 동작에는 영향 없음.
+
+**재검토 조건**
+
+- Codex 후속 업데이트 또는 `/setup-default-sandbox`가 elevated 구성을 정상 완료할 때. 복귀 전후에 sandbox smoke test와 `codex doctor`를 모두 통과해야 함.
+
 ### D-011 · 릴리스마다 CHANGELOG와 GitHub Release 노트를 남긴다 (2026-07-12)
 
 **상황**

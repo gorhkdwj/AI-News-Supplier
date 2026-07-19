@@ -65,7 +65,7 @@ export function registerTools(server: McpServer, deps: McpDeps): void {
     'get_trends',
     {
       description:
-        '최신 AI 트렌드를 hotness(화제성) 순으로 반환합니다. 소스/유형/기간으로 필터할 수 있습니다.',
+        '최신 AI 트렌드를 반환합니다. 기본은 v2 overview(Official·Repos·Community·Research 4섹션 브리핑)이며, channel/sort로 채널별 랭킹을 조회합니다. ranking_version=legacy는 이전 hotness 순 목록(0.4.0 제거 예정)입니다. 소스/유형/기간으로 필터할 수 있습니다.',
       inputSchema: {
         limit: z.number().int().positive().max(100).optional(),
         sources: z.array(z.string()).optional(),

@@ -280,7 +280,7 @@ describe('core trend service', () => {
     expect(official.items[0]!.ranking.signals.communityEcho).toBe(shared!.ranking.score);
   });
 
-  it('preserves the exact legacy hotness/diversity order by default', () => {
+  it('preserves the exact legacy hotness/diversity order with explicit legacy ranking', () => {
     const connection = db();
     upsertItems(
       connection,
@@ -308,7 +308,11 @@ describe('core trend service', () => {
       NOW.toISOString(),
     );
 
-    const result = getTrends(connection, { limit: 3 }, { now: NOW, maxPerSourceRatio: 0.4 });
+    const result = getTrends(
+      connection,
+      { rankingVersion: 'legacy', limit: 3 },
+      { now: NOW, maxPerSourceRatio: 0.4 },
+    );
 
     expect(result.items.map((item) => item.id)).toEqual([
       itemId('https://example.com/a-high'),
@@ -392,7 +396,11 @@ describe('core trend service', () => {
     );
     upsertItems(connection, inputs, NOW.toISOString());
 
-    const result = getTrends(connection, { limit: 500 }, { now: NOW, maxPerSourceRatio: 1 });
+    const result = getTrends(
+      connection,
+      { rankingVersion: 'legacy', limit: 500 },
+      { now: NOW, maxPerSourceRatio: 1 },
+    );
 
     expect(result.items).toHaveLength(500);
     expect(result.items.map((item) => item.id)).toEqual(

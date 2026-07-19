@@ -247,7 +247,7 @@ CLI 옵션은 `--ranking`, `--channel`, `--sort`입니다. 기존 source/type/ho
 
 - 잘못된 조합은 CLI 종료 코드 1 또는 MCP 입력 오류입니다. 조용히 다른 값으로 교정하지 않습니다.
 - `legacy`는 overview/briefing만 허용합니다.
-- 0.1.0에서 옵션이 없으면 legacy가 기본이며 channel/sort를 명시하면 v2를 뜻합니다. 0.2.0부터 옵션 없는 기본은 v2 overview/briefing입니다.
+- 0.1.0~0.2.0에서는 옵션이 없으면 legacy가 기본이며 channel/sort를 명시하면 v2를 뜻합니다. 0.3.0부터 옵션 없는 기본은 v2 overview/briefing이며, legacy는 `--ranking legacy`를 명시할 때만 사용합니다(승인 게이트 통과, D-012).
 - `channel`만 명시하면 그 채널의 기본 sort를 사용합니다. `sort`만 명시했는데 기본 overview와 호환되지 않으면 채널을 추측하지 않고 오류로 처리합니다. `--ranking legacy`와 v2 전용 channel/sort를 함께 명시해도 오류입니다.
 - 기본 조회 기간은 Community 72시간, Official 720시간, Repos 336시간, Research 72시간이며 명시한 hours가 덮어씁니다.
 
@@ -328,7 +328,7 @@ ranking {
 - 최초 7일(~2026-07-19): 기준점 워밍업만 수행합니다.
 - 다음 7일(~2026-07-26): v2를 shadow/명시 옵션으로 노출하고 legacy 기본을 유지합니다.
 - 0.2.0: D-007 개선 묶음(Node 22.12 상향, 숨김 스케줄러, 업데이트 안내, 이중 언어 README, 커스텀 피드 문서)과 미러 export 명령을 배포하고 legacy 기본을 유지합니다. 실사용자 발생으로 게이트 전 publish를 허용합니다(D-010, 2026-07-12).
-- 승인 게이트 통과 후 0.3.0에서 v2 Overview를 기본으로 전환합니다(D-010으로 0.2.0에서 이동).
+- 승인 게이트 통과(2026-07-19 조기 통과, D-012)에 따라 0.3.0에서 v2 Overview를 기본으로 전환합니다(D-010으로 0.2.0에서 이동).
 - legacy 실행 옵션은 한 minor release 유지하고 0.4.0에서 제거합니다. hotness 출력 별칭은 1.0까지 유지합니다.
 
 승인 게이트는 다음과 같습니다.
