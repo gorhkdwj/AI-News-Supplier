@@ -11,6 +11,35 @@
 
 ---
 
+### W-059 · 23:00 공식 재실측 통과 확인 및 게이트 종결
+
+**요청**
+
+- "P0(0.3.0 publish 마무리)만 진행" (/superpowers:brainstorming 경유)
+
+**수행 작업**
+
+- 23:00 예약 태스크가 생성한 out/gate-recheck-2026-07-19.txt 확인: **24h coverage 196/200(98.0%) ≥ 95% 공식 통과** — D-013의 시뮬레이션 예측(98.0%)과 정확히 일치. 7d 99.3%·community 100% 유지. D-013의 publish 안전판 조건 충족
+- 게이트 확정에 따라 1회성 예약 태스크 삭제(schtasks /delete /tn ains-gate-recheck /f, SUCCESS)
+- 백로그 B-006 행에 공식 통과 반영
+- 브레인스토밍 스킬로 착수했으나 컨텍스트 탐색 결과 설계 결정이 남아 있지 않아(잔여 작업 = 사전 승인된 태스크 삭제 + 사용자 전용 npm publish) 설계 플로우를 단축
+
+**변경 파일**
+
+- Worklog.md, docs/plans/backlog.md (그 외 코드 무변경)
+
+**검증**
+
+- 재실측 파일 실측치 판독, schtasks 삭제 SUCCESS 확인
+
+**판단 근거**
+
+- 원 인수인계에 "게이트 확정 후 예약 태스크 삭제"가 명시되어 있어 별도 승인 불요
+
+**결과**
+
+- P0 잔여는 사용자 `npm publish`(OTP) 단 하나. publish 후 P1(GitHub Release·배포 검증)은 요청 시 진행
+
 ### W-058 · 대기 결정 3건 확정 (publish 방식·B-014·B-015)
 
 **요청**
