@@ -31,8 +31,8 @@
 
 **검증**
 
-- Codex CLI로 프로젝트 설정을 실제 파싱하고 `ains` MCP 등록 상태를 확인한다.
-- Git 추적 유지·비무시 상태와 변경 범위를 확인한 뒤 관련 파일만 커밋·푸시한다.
+- `codex mcp get ains` 실행 결과 `enabled: true`, `transport: stdio`, `command: ains-mcp`로 프로젝트 설정 파싱과 MCP 등록이 정상임을 확인했다.
+- `git ls-files --error-unmatch` 통과, `git check-ignore` 결과 `NOT_IGNORED`를 확인했다. `git diff --check`도 통과했다.
 
 **판단 근거**
 
@@ -41,7 +41,7 @@
 
 **결과**
 
-- `.codex/config.toml`을 공유 Codex 설정으로 계속 추적하도록 확정했다. Decisionlog는 기존 D-012와 방향이 같아 추가하지 않으며, 실제 오류가 발생하지 않아 Troubleshootinglog도 추가하지 않는다.
+- `.codex/config.toml`을 공유 Codex 설정으로 계속 추적하도록 확정하고 `origin/main`에 반영했다. Decisionlog는 기존 D-012와 방향이 같아 추가하지 않으며, 실제 오류가 발생하지 않아 Troubleshootinglog도 추가하지 않는다.
 
 ---
 
