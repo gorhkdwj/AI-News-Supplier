@@ -121,7 +121,7 @@ Restart the agent completely after registering. `ains-mcp` is a STDIO MCP server
 ```bash
 # Collect and browse
 ains fetch --source "hackernews,github"
-ains trends --ranking v2 --channel community --sort hot --hours 48
+ains trends --channel community --sort hot --hours 48
 
 # Search the local store
 ains search "mixture of experts" --days 30

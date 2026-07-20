@@ -11,6 +11,57 @@
 
 ---
 
+### W-065 · 사용 설명서(docs/index.html) 0.3.1 기준 전면 갱신
+
+**요청**
+
+- `docs/index.html`이 기존 0.2.0 기준이므로, 현재까지 구현·수정된 범위를 정확히 파악해 내용을 갱신하고 추가 개선·보완 지점을 찾을 것.
+
+**수행 작업**
+
+문서는 실제로는 v0.1.0 기준(배지·푸터 2026-07-10)이었고 0.3.0/0.3.1 내용이 일부만 덧대어져 있었다. 구현 대조 후 6묶음으로 편집했다.
+
+- **묶음 B — v2 기본값 스윕**: `--ranking v2` 21곳 제거. 단순 삭제가 불가한 3블록은 재작성 — 빠른 시작 예시(삭제 시 두 줄이 동일해짐), "올바른 조합" 블록(맨 앞에 `ains trends # 기본값: overview / briefing` 추가해 "옵션 없는 명령이 첫 번째 적법 조합"으로 재정박), "오류 예시"(비호환은 channel↔sort이므로 유지). 서술형 3곳과 MCP 예시의 `ranking_version` 정리.
+- **묶음 D — 사실 오류**: `repo_trending_v2` → `repository_trending_v2`, doctor 출력 목록 9줄 정정, MCP 표에 `from_item` 추가, CLI 명령표에 `mirror` 행 추가(10→11), `fetch` 행에 `--seed`.
+- **묶음 C — 토큰 위험**: 문서가 치트시트·문제해결에서 권하던 `ains config show`가 `tokens.github`와 Reddit client secret을 평문 출력함을 발견. 진단 기본 절차를 `config path` + `doctor`로 교체하고 4곳에 경고 배치. 코드 마스킹은 B-017로 등재(범위 밖).
+- **묶음 A — 신설 장 `#cold-start`(03)**: `fetch --seed`·`sections[].notice`·"왜 비어 있나"는 같은 이야기의 원인·진단·처방이므로 한 장으로 통합하고 나머지는 전부 교차링크. 배지 0.3.1 / 2026-07-20, eyebrow 13개 재번호(03~15 → 04~16), 사이드바 링크, "CLI 11개 명령", "작업 예시 11가지".
+- **묶음 E — 교차링크·잔여**: 13장의 "v2 전환 승인 전입니다" callout이 5장의 "0.3.0부터 v2가 기본"과 정면 모순이던 것을 "특정 시점 표본의 측정 결과"로 교체(D-013 게이트 2026-07-19 통과 반영). `search` 한국어 질의 0건 경고(OR 완화는 세션에만 존재), `--from-item` 규칙 산문, mirror 설정 키, `AINS_NO_UPDATE_CHECK`·`EDITOR` 환경변수, 카드 2개, 작업 예시 11번 행.
+- **묶음 F — 신규 마크업**: `design_learning_session` 탭셋(토픽/항목), `#output`에 v2 래퍼 구조 소절 + CLI/MCP JSON 비대칭 표, 소스 표 TTL 6열 신설·HF `daily_papers` 반영·임계값·Reddit 자격증명 게이트, `mirror export` details, 문제 해결 3건 신설.
+- **문서 외 동기화**: 계약서 §1 "Node.js 20 이상" → 22.12(유일한 이상치), README 2종의 `--ranking v2` 제거(index.html과 모순 방지), backlog B-017 등재.
+- **추가 요청 — 변경 이력 반영(17장 `#changelog` 신설)**: 사용자 제안에 따라 확인한 결과, `npm pack`에 포함되는 문서는 `README.md`·`README.ko.md`·`docs/index.html` 세 개뿐이어서 앞 단계에서 넣은 `../CHANGELOG.md` 상대 링크가 **npm 설치 사용자에게 깨진 링크**였다. 기존 푸터의 `requirements-contract.md` 링크도 같은 결함이었다. 세 링크를 모두 절대 GitHub URL로 교체하고, 전문 복사 대신 **사용 방법이 달라지는 항목만 추린 4행 요약 표**(버전/날짜/달라지는 점/문서에서 볼 곳)로 신설 장을 추가했다. "이 문서는 최신 버전 기준이므로 구버전에는 없는 기능이 보일 수 있다"는 안내와 0.4.0 제거 예정 항목(`--ranking legacy`, `hotness`는 1.0까지 유지)을 함께 명시. 표 셀 줄바꿈 방지를 위해 기존 유틸리티 관례(`.muted`/`.small`)에 맞춰 `.nowrap` 클래스 1개 추가. 치트시트는 16→17로 이동.
+
+**변경 파일**
+
+- `docs/index.html` (주 대상)
+- `docs/requirements-contract.md` (§1 Node 버전)
+- `README.md`, `README.ko.md` (`--ranking v2` 제거)
+- `docs/plans/backlog.md` (B-017 신설)
+
+**검증**
+
+- 구조: prettier 파싱 OK. 태그 균형 div/section/details/table/tr 전부 일치.
+- 브라우저(Chrome, 실제 렌더링): 사이드바 링크 17 = 섹션 17, orphan/unlinked 모두 0. 중복 id 0(JS 생성 `tab-*`/`panel-*` 포함). 탭셋 3개 모두 selected 1·표시 패널 1, 신규 탭셋 클릭 동작·`aria-controls` 배선 확인. eyebrow 01~17 연속. `details` 25개 전부 정상, `.code-block` 36 = `.copy-button` 36. 테마 토글 왕복 정상 = IIFE 실행. 콘솔 오류 0. 가로 넘침 없음. 표 13개 열 수 정합(소스 표 6열 14행). 스크롤스파이가 신규 `#cold-start`·`#changelog`를 활성 표시. 문서 내 검색으로 `seed`/`사유`/`from-item`/`미러`/`config show` 모두 의도한 장에 도달.
+- 링크: 페이지 내 앵커 깨짐 0건, **상대 링크 0건**(외부 참조 전부 절대 URL — npm 설치본에서도 유효). 외부 자산(폰트·CDN·스크립트) 참조 0건으로 `file://` 단독 실행 원칙 유지.
+- 실행 대조: `ains --help` 11개 명령 일치. `fetch --seed`·`learn session --from-item` 헬프 문자열 일치. XOR 위반(없음/둘다) 및 잘못된 channel↔sort 조합 전부 종료 코드 1. 오류 문구 `topic과 from-item 중 정확히 하나만 지정하십시오`, `항목을 찾을 수 없습니다: <id>` 일치. 토큰 없는 `doctor`의 3줄 경고와 출력 순서 일치(값 미출력 확인). 빈 DB `repos/trending`의 `(사유: …)`가 문서에 인용한 원문과 글자 단위 동일. 옵션 없는 `trends`가 Official·Repos·Community·Research 4섹션 반환. `trends --json`·`search --json` 모두 최상위 배열 확인.
+- 인쇄 레이아웃: 인쇄 대화상자는 렌더러를 멈추므로 열지 않고, 각 표를 A4 인쇄 가능 폭(695px) 컨테이너에 `overflow-x: visible`로 복제해 측정. **13개 표 전부 694px로 수렴, 잘림 0건**(6열 소스 표 포함). 인쇄 스타일시트가 닫힌 `details`를 펼치는 규칙 존재 확인. 신규 탭셋의 `from_item` 규범 문장 4개가 모두 탭 바깥에 있어 인쇄 시 소실되지 않음을 확인(탭 안에는 arguments 예시만).
+- 회귀: `npm test` 35파일 264테스트 전부 통과(문서 전용 변경).
+
+**판단 근거**
+
+- notice 문구와 오류 메시지는 패러프레이즈하지 않고 `service.ts`·`session.ts`의 한국어 원문을 그대로 인용했다. 문서가 런타임 문자열과 구조적으로 드리프트할 수 없게 하기 위함이다.
+- 신설 장을 맨 뒤가 아니라 03(시작하기)에 둔 이유는, 설치 첫날 `repos/trending`이 비는 것이 운영 문제가 아니라 시작하기 단계의 실패이기 때문이다.
+- `--from-item`의 규범 문장은 탭셋 밖 `<p>`에 두었다. `[hidden]` 탭 패널은 인쇄되지 않아 규칙이 PDF에서 사라지기 때문이다.
+- 환경변수 행은 `AINS_HOME` 뒤에만 삽입했다. Reddit 3행을 묶는 `rowspan="3"` 사이에 넣으면 표가 조용히 깨진다.
+- `config show` 코드 마스킹은 사용자 결정에 따라 문서 경고만 선반영하고 B-017로 분리했다.
+
+**결과**
+
+- 완료: 문서 갱신, 모순 해소, 신설 장 2개(`#cold-start`·`#changelog`), 문서 외 동기화 3건, 백로그 등재. 계획 항목 21건 전부 반영 확인.
+- 남은 작업: (1) B-017(`config show` 토큰 마스킹) 구현 여부 결정. (2) **`docs/index.html`은 npm 패키지에 포함되므로 이 갱신본은 다음 publish 시점에야 사용자에게 전달된다** — 다음 릴리스에 함께 나가야 함. (3) 커밋 미실행.
+- 한계: Firefox 교차 확인 미실행(태그 균형·prettier 파싱이 통과해 파서 분기 위험은 낮음).
+
+---
+
 ### W-064 · B-004 구현(세션 근거 버킷 quota) 및 0.3.1 패키징
 
 **요청**

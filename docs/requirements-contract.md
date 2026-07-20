@@ -4,7 +4,7 @@
 
 ## 1. 전역 불변 규칙
 
-- Node.js 20 이상, TypeScript/ESM, 로컬 SQLite를 사용합니다.
+- Node.js 22.12 이상, TypeScript/ESM, 로컬 SQLite를 사용합니다(D-006, 0.2.0부터).
 - 도구 자체는 LLM API를 호출하지 않습니다.
 - 공개 API·RSS·Atom·허용된 공개 데이터만 수집하며 HTML 스크레이핑은 하지 않습니다.
 - 한 수집기의 실패가 다른 수집기나 저장된 데이터 조회를 실패시키지 않습니다.

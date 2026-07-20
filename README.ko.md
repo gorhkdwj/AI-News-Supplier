@@ -121,7 +121,7 @@ Claude 데스크톱 앱은 Claude Code와 **별개의** MCP 등록 장부를 씁
 ```bash
 # 최신 데이터 수집과 조회
 ains fetch --source "hackernews,github"
-ains trends --ranking v2 --channel community --sort hot --hours 48
+ains trends --channel community --sort hot --hours 48
 
 # 축적된 데이터 검색과 상세 조회
 ains search "mixture of experts" --days 30
