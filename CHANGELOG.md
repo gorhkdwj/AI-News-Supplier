@@ -5,7 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 Each release is also published as a [GitHub Release](https://github.com/gorhkdwj/AI-News-Supplier/releases) with the same notes.
 
-## [0.3.1] - 2026-07-20
+## [0.3.1] - 2026-07-21
+
+### Security
+
+- **`ains config show` no longer prints secrets** (B-017): it used to dump the resolved config verbatim, so `tokens.github` and the Reddit `clientId` / `clientSecret` / `username` appeared in plain text — and the manual was recommending the command as a first diagnostic step, which made pasting a token into an issue or a screen share an easy mistake. Values under `tokens` are now replaced with `"***"`. Unset values stay `null`, so "which of the three is missing, and why is Reddit disabled?" is still answerable from the output. Pass `--reveal` when you genuinely need the raw values; it prints a warning to stderr and keeps stdout valid JSON.
 
 ### Added
 
@@ -14,6 +18,7 @@ Each release is also published as a [GitHub Release](https://github.com/gorhkdwj
 ### Changed
 
 - **Session evidence is no longer dominated by a single bucket** (B-004, contract §11.4): broad topics used to fill the 40-item evidence list with whatever type ranks highest ('agent' returned 36/40 repos, 'model' 31/40 papers). The search now over-fetches 3× and allocates `floor(40/4)` per bucket (official/papers/repos/discussion) with round-robin redistribution of leftover slots — the same allocation scheme the v2 overview uses. `search.matched` now reports matches within the 120-item fetch window, which can exceed the number of evidence items actually included (≤40).
+- **The bundled manual (`docs/index.html`) is rewritten for 0.3.1** (W-065): it still described v0.1.0 and contradicted itself — one chapter said v2 became the default in 0.3.0 while another still warned not to treat v2 as the default. It now documents cold-start seeding (`fetch --seed`), the empty-section reasons, `--from-item`, the per-bucket quota and the `search.matched` pitfall, `search.mode`, the doctor token warning, per-source TTLs and the mirror config keys; examples drop `--ranking v2` so they match the 0.3.0 default. Two new chapters cover cold start and a per-release summary of what changes for users. Links to `CHANGELOG.md` and the contract are now absolute, since neither file ships inside the npm package.
 
 ## [0.3.0] - 2026-07-19
 
