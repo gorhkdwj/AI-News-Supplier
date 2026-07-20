@@ -11,6 +11,40 @@
 
 ---
 
+### W-067 · Codex 프로젝트 설정 추적 확정 및 설명 보강
+
+**요청**
+
+- 다른 Claude Code 세션이 `.codex/config.toml`의 정체를 반복 확인하는 상황에서, 파일을 Git에서 제외할지 검토한 뒤 권장안대로 처리할 것.
+
+**수행 작업**
+
+- `.codex/config.toml`이 2026-07-10부터 Git에서 추적된 공유 Codex 프로젝트 설정이며, README의 `ains-mcp` 프로젝트 연동 안내와 연결된 파일임을 확인했다.
+- 이미 추적 중인 파일은 `.gitignore`만으로 수정 표시가 사라지지 않고, 추적을 해제하면 clone 사용자에게 `ains-mcp` 자동 연동이 전달되지 않으므로 `.gitignore`에는 추가하지 않았다.
+- 파일 상단에 "Codex 전용 프로젝트 설정이며 공유 연동과 저장소 안전 정책을 위해 추적한다"는 설명 주석을 추가했다.
+- 기존 `sandbox_mode = "read-only"`와 `[mcp_servers.ains]` 설정은 그대로 유지했다. 이는 D-012의 프로젝트 read-only 유지 결정과 일치한다.
+
+**변경 파일**
+
+- `.codex/config.toml`
+- `Worklog.md`
+
+**검증**
+
+- Codex CLI로 프로젝트 설정을 실제 파싱하고 `ains` MCP 등록 상태를 확인한다.
+- Git 추적 유지·비무시 상태와 변경 범위를 확인한 뒤 관련 파일만 커밋·푸시한다.
+
+**판단 근거**
+
+- 개인 기본값은 사용자 전역 `~/.codex/config.toml`, 저장소별 MCP·샌드박스 정책은 프로젝트 `.codex/config.toml`에 두는 Codex 설정 범위와 부합한다.
+- Claude Code가 반복 확인한 직접적인 원인은 Codex 전용 파일의 존재 자체보다 추적 파일에 미커밋 변경이 장기간 남아 있던 상태로 판단했다. 파일의 목적을 주석으로 남기고 변경을 확정하면 공유 연동을 보존하면서 작업 트리를 정리할 수 있다.
+
+**결과**
+
+- `.codex/config.toml`을 공유 Codex 설정으로 계속 추적하도록 확정했다. Decisionlog는 기존 D-012와 방향이 같아 추가하지 않으며, 실제 오류가 발생하지 않아 Troubleshootinglog도 추가하지 않는다.
+
+---
+
 ### W-066 · B-017 구현 — `ains config show` 토큰 마스킹, 0.3.1 포함
 
 **요청**

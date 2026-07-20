@@ -1,2 +1,4 @@
+# Codex 전용 프로젝트 설정입니다. 공유 Codex 연동과 저장소 안전 정책을 위해 Git에서 추적합니다.
+sandbox_mode = "read-only"
 [mcp_servers.ains]
 command = "ains-mcp"
